@@ -162,6 +162,7 @@ class Worker(db.Model, UserMixin):
 
     def get_last_recorded_work_time(self):
         """Return the latest appointment timestamp for this worker, if any."""
+        from app.domains.scheduling.models.scheduling_models import Appointment
         return db.session.query(func.max(Appointment.appointment_time)).filter(
             Appointment.worker_id == self.id
         ).scalar()

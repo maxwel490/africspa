@@ -74,6 +74,7 @@ class Salon(db.Model):
     
     def get_subscription_price(self):
         """Get monthly price using dynamic pricing configuration"""
+        from app.domains.billing.models.billing_models import PricingConfig
         # Count active branches
         branch_count = len([b for b in self.branches if b.is_active]) if self.branches else 1
         
@@ -99,6 +100,7 @@ class Salon(db.Model):
     
     def get_regional_pricing_info(self):
         """Get complete regional pricing information"""
+        from app.continental_scaling import ContinentalSubscriptionManager
         region = getattr(self, 'region', 'east_africa') or 'east_africa'
         branch_count = len([b for b in self.branches if b.is_active]) if self.branches else 1
         
