@@ -166,43 +166,58 @@ class ServiceOrder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_number = db.Column(db.String(50), unique=True, nullable=False, index=True)
     
-    salon_id = db.Column(db.Integer, db.ForeignKey('salons.id'), nullable=False)
-    branch = db.Column(db.String(50), nullable=False, index=True)
-    
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
-    client_name = db.Column(db.String(100))
-    client_phone = db.Column(db.String(20))
+    # Client information
+    client_name = db.Column(db.String(100), nullable=False)
+    client_phone = db.Column(db.String(20), nullable=False)
     client_email = db.Column(db.String(100))
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=True)
     
-    status = db.Column(db.String(20), default='pending', index=True)
-    payment_status = db.Column(db.String(20), default='pending', index=True)
-    payment_method = db.Column(db.String(50))
-    
+    # Financial details
     subtotal = db.Column(db.Float, default=0.0)
-    discount_amount = db.Column(db.Float, default=0.0)
     tax_amount = db.Column(db.Float, default=0.0)
+    discount_amount = db.Column(db.Float, default=0.0)
     total_amount = db.Column(db.Float, default=0.0)
-    amount_paid = db.Column(db.Float, default=0.0)
     
-    receipt_no = db.Column(db.String(50), index=True)
+    # Payment
+    payment_method = db.Column(db.String(50))
+    payment_status = db.Column(db.String(20), default='pending')  # pending, paid, refunded, partial
+    paid_amount = db.Column(db.Float, default=0.0)
+    receipt_no = db.Column(db.String(50))
+    
+    # Status tracking
+    status = db.Column(db.String(20), default='pending', index=True)  # pending, confirmed, in_progress, completed, cancelled
+    priority = db.Column(db.String(20), default='normal')  # low, normal, high, urgent
+    
+    # Multi-tenant fields
+    branch = db.Column(db.String(20), nullable=False, index=True)
+    salon_id = db.Column(db.Integer, db.ForeignKey('salons.id'), nullable=False)
+    
+    # Additional fields
     notes = db.Column(db.Text)
+    special_instructions = db.Column(db.Text)
+    estimated_completion = db.Column(db.DateTime)
+    actual_completion = db.Column(db.DateTime)
     
-    worker_id = db.Column(db.Integer, db.ForeignKey('workers.id'))
-    created_by_id = db.Column(db.Integer, db.ForeignKey('workers.id'))
-    
+    # Audit fields
     created_at = db.Column(db.DateTime, default=get_utc_now)
     updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('workers.id'), nullable=False)
+    completed_by_id = db.Column(db.Integer, db.ForeignKey('workers.id'))
     
-    items = db.relationship('ServiceOrderItem', backref='order', lazy=True, cascade='all, delete-orphan')
-    worker = db.relationship('Worker', foreign_keys=[worker_id], backref='service_orders_assigned')
-    created_by = db.relationship('Worker', foreign_keys=[created_by_id], backref='created_service_orders')
+    # Relationships
+    created_by = db.relationship('Worker', foreign_keys=[created_by_id], backref='service_orders_created')
+    completed_by = db.relationship('Worker', foreign_keys=[completed_by_id], backref='service_orders_completed')
+    client = db.relationship('Client', backref='service_orders')
+    services = db.relationship('ServiceOrderItem', backref='service_order', lazy=True, cascade='all, delete-orphan')
     
     def get_balance_due(self):
-        return self.total_amount - self.amount_paid
+        """Calculate remaining balance"""
+        return self.total_amount - self.paid_amount
     
     def is_overdue(self):
-        if self.payment_status != 'paid' and self.created_at:
-            return (datetime.utcnow() - self.created_at).days > 30
+        """Check if order is overdue"""
+        if self.estimated_completion and self.status not in ['completed', 'cancelled']:
+            return datetime.utcnow() > self.estimated_completion
         return False
     
     def __repr__(self):
