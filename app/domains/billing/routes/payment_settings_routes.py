@@ -11,8 +11,7 @@ from app.admin import admin_bp
 @roles_required('admin')
 def payment_settings():
     """Manage tenant payment configuration"""
-    # Import the payment functions from accountant routes
-    from app.accountant.routes import get_tenant_payment_options, save_tenant_payment_config
+    from app.domains.shared.utils import get_tenant_payment_options, save_tenant_payment_config
     
     if request.method == 'POST':
         action = request.form.get('action')

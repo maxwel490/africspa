@@ -40,19 +40,20 @@ def create_app(template_folder='templates', static_folder='static'):
     # ----------------------------------------------------------------
     # Blueprint Registrations
     # ----------------------------------------------------------------
-    # Role-based blueprints (legacy - being migrated to domain-based)
-    from app.auth.routes import auth_bp
+    # Blueprints defined in package __init__.py files;
+    # domain route modules imported there register handlers on them.
+    from app.auth import auth_bp
     from app.auth.oauth_routes import oauth_bp
     from app.admin import admin_bp
-    from app.accountant.routes import accountant_bp 
-    from app.salonist.routes import salonist_bp
-    from app.main.routes import main_bp
-    from app.superadmin.routes import superadmin_bp
+    from app.accountant import accountant_bp
+    from app.salonist import salonist_bp
+    from app.main import main_bp
+    from app.superadmin import superadmin_bp
     from app.routes.pricing_management import superadmin_pricing_bp
     from app.controllers.subscription_payment import subscription_payment_bp
     from app.routes.public_chat import public_chat_bp
     
-    # Register role-based blueprints
+    # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(oauth_bp, url_prefix='/oauth')
     app.register_blueprint(admin_bp, url_prefix='/admin')

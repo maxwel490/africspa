@@ -1,12 +1,11 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from flask import render_template, request, jsonify, redirect, url_for, flash
 from datetime import datetime
 from app.models import Worker, Salon, Branch, ContactConfig
 from app import db
+from app.main import main_bp
 import secrets
 import uuid
 import os
-
-main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/index')
 def index():

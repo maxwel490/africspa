@@ -1,37 +1,10 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request
 from app.models import Appointment, StaffDeduction, Worker, db
 from flask_login import current_user, login_required
 from app.decorators import roles_required
+from app.salonist import salonist_bp
+from app.domains.shared.utils import get_week_start, get_fourth_sunday_week_start, normalize_specialty
 from datetime import datetime, timedelta
-
-salonist_bp = Blueprint('salonist', __name__)
-
-
-def get_week_start(date_value):
-    days_to_subtract = (date_value.weekday() + 1) % 7
-    return (date_value - timedelta(days=days_to_subtract)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-
-def get_fourth_sunday_week_start(date_value):
-    month_start = datetime(date_value.year, date_value.month, 1)
-    first_sunday_offset = (6 - month_start.weekday()) % 7
-    fourth_sunday = month_start + timedelta(days=first_sunday_offset + 21)
-    return get_week_start(fourth_sunday)
-
-
-def normalize_specialty(specialty_value):
-    value = (specialty_value or '').strip().lower()
-    if 'cornrow' in value or 'conrow' in value:
-        return 'Conrows'
-    if 'braid' in value:
-        return 'Braids'
-    if 'nail' in value:
-        return 'Nails'
-    if 'wash' in value:
-        return 'Wash'
-    if 'makeup' in value:
-        return 'Makeup'
-    return 'Uncategorized'
 
 @salonist_bp.route('/dashboard')
 @login_required

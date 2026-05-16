@@ -178,7 +178,7 @@ def salon_settings():
         return redirect(url_for('admin.salon_settings'))
     
     # Get current payment configuration
-    from app.accountant.routes import get_tenant_payment_options
+    from app.domains.shared.utils import get_tenant_payment_options
     payment_options = get_tenant_payment_options(current_user.salon_id)
     
     # Get all possible methods for the form
