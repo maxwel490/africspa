@@ -5,7 +5,7 @@ from app.services.chat_service import ChatService
 from app.decorators import roles_required
 from sqlalchemy import func
 from datetime import datetime, timedelta
-from . import superadmin_bp
+from app.superadmin import superadmin_bp
 
 @superadmin_bp.route('/')
 @login_required
