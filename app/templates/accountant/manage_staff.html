@@ -1,0 +1,420 @@
+{% extends "accountant/accountant_base.html" %}
+
+{% block accountant_content %}
+<div class="container-fluid py-2">
+    <div class="row g-4">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-dark">
+                        <i class="bi bi-person-plus me-2 text-primary"></i>Register Salonist
+                    </h5>
+                    <small class="text-muted">Create new salonist for {{ current_user.branch }} branch</small>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('accountant.manage_staff') }}" id="staffForm">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Full Names *</label>
+                            <input type="text" name="full_name" class="form-control" placeholder="e.g. Jane Doe" required>
+                            <div class="invalid-feedback">Please enter full name</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Username *</label>
+                            <input type="text" name="username" class="form-control" placeholder="e.g. jane_doe" required>
+                            <div class="form-text">Unique login ID for the salonist</div>
+                            <div id="usernameSuggestions" class="mt-2" style="display: none;"></div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Phone Number *</label>
+                                <input type="tel" name="phone" class="form-control" id="phoneField" placeholder="{{ phone_placeholder }}" required>
+                                <div class="form-text">{{ phone_help_text }}</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">National ID *</label>
+                                <input type="text" name="id_number" class="form-control" placeholder="ID Number" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Email Address</label>
+                            <input type="email" name="email" class="form-control" placeholder="name@example.com">
+                            <div class="form-text">Optional but recommended</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Primary Specialty *</label>
+                            <input type="text" name="specialty" id="specialtySelect" class="form-control" list="specialtyList" placeholder="Type or select a specialty..." required>
+                            <datalist id="specialtyList">
+                                <option value="Conrows">
+                                <option value="Braids">
+                                <option value="Undo">
+                                <option value="Nails">
+                                <option value="Wash">
+                                <option value="Makeup">
+                                <option value="Massage">
+                                <option value="Eyelash Extensions">
+                                <option value="Hair Coloring">
+                                <option value="Waxing">
+                                <option value="Facials">
+                            </datalist>
+                            <div class="form-text text-muted small">Select from dropdown or type a new specialty</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Password *</label>
+                            <div class="input-group">
+                                <input type="password" name="password" class="form-control" id="password" required minlength="6">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
+                                    <i class="bi bi-eye" id="passwordToggle"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Minimum 6 characters</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Confirm Password *</label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                            <div class="invalid-feedback">Passwords do not match</div>
+                        </div>
+
+                        <div class="alert alert-info small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <strong>Branch Assignment:</strong> This salonist will be assigned to <strong>{{ current_user.branch }}</strong> branch
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <strong>Note:</strong> This system supports all salon types including massage parlors, hair salons, nail salons, and beauty parlors.
+                                </small>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                            <i class="bi bi-person-plus me-2"></i>Register Salonist
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="mb-0 fw-bold text-dark">Active Salonists - {{ current_user.branch }}</h5>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" id="staffSearch" class="form-control bg-light border-start-0" placeholder="Search staff by name or specialty...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="staffTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4 py-3 small text-uppercase text-muted fw-bold">Staff Member</th>
+                                <th class="small text-uppercase text-muted fw-bold">Primary Specialty</th>
+                                <th class="small text-uppercase text-muted fw-bold text-center">Status</th>
+                                <th class="text-end pe-4 small text-uppercase text-muted fw-bold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for staff in staff_members %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary-soft text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">
+                                            {{ staff.full_name[0]|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ staff.full_name }}</div>
+                                            <div class="text-muted extra-small">Joined: {{ staff.created_at.strftime('%b %Y') if staff.created_at else 'N/A' }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill bg-light text-dark border px-3">
+                                        {{ staff.specialty or 'Generalist' }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-soft-success text-success border border-success small">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Active
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light border shadow-sm" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                            <li>
+                                                <a class="dropdown-item py-2" href="{{ url_for('accountant.edit_staff', staff_id=staff.id) }}">
+                                                    <i class="bi bi-pencil me-2 text-primary"></i> Edit Profile
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2" href="{{ url_for('accountant.reset_password', staff_id=staff.id) }}">
+                                                    <i class="bi bi-shield-lock me-2 text-warning"></i> Reset Password
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item py-2 text-danger" href="{{ url_for('accountant.delete_staff', staff_id=staff.id) }}" 
+                                                   onclick="return confirm('Are you sure you want to delete {{ staff.username }}? This action cannot be undone.')">
+                                                    <i class="bi bi-trash me-2"></i> Delete Staff
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="bi bi-people display-4 d-block mb-3 opacity-25"></i>
+                                        <p class="mb-0">No staff members registered for this branch yet.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-primary-soft { background-color: rgba(13, 110, 253, 0.1); }
+    .bg-soft-success { background-color: rgba(25, 135, 84, 0.1); }
+    .extra-small { font-size: 0.7rem; }
+    #staffTable tbody tr:hover { background-color: #fbfcfe; transition: all 0.2s; }
+    .dropdown-item:active { background-color: #0d6efd; }
+</style>
+
+<script>
+    // Real-time Search Logic
+    document.getElementById('staffSearch').addEventListener('keyup', function() {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#staffTable tbody tr');
+        rows.forEach(row => {
+            let text = row.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        });
+    });
+
+    // Password Toggle Function
+    function togglePassword() {
+        const passwordField = document.getElementById('password');
+        const passwordToggle = document.getElementById('passwordToggle');
+        
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            passwordToggle.classList.remove('bi-eye');
+            passwordToggle.classList.add('bi-eye-slash');
+        } else {
+            passwordField.type = 'password';
+            passwordToggle.classList.remove('bi-eye-slash');
+            passwordToggle.classList.add('bi-eye');
+        }
+    }
+
+    // Form Validation and Reset
+    document.getElementById('staffForm').addEventListener('submit', function(e) {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const phone = document.querySelector('input[name="phone"]').value;
+        const idNumber = document.querySelector('input[name="id_number"]').value;
+        
+        // Clear previous error states
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        
+        let isValid = true;
+        
+        // Validate password match
+        if (password !== confirmPassword) {
+            document.getElementById('confirmPassword').classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        // Validate phone format (basic validation)
+        if (!phone.match(/^\+?[0-9\s\-\(\)]+$/)) {
+            document.querySelector('input[name="phone"]').classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        // Validate ID number (basic validation)
+        if (idNumber.length < 5) {
+            document.querySelector('input[name="id_number"]').classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        // Validate specialty field
+        const specialty = document.querySelector('input[name="specialty"]').value.trim();
+        if (!specialty) {
+            document.querySelector('input[name="specialty"]').classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+
+    // Real-time validation feedback
+    document.getElementById('confirmPassword').addEventListener('input', function() {
+        const password = document.getElementById('password').value;
+        if (this.value !== password) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
+
+    // Real-time username validation with Google-style suggestions
+    document.querySelector('input[name="username"]').addEventListener('input', function() {
+        const username = this.value.trim();
+        const usernameField = this;
+        const suggestionsContainer = document.getElementById('usernameSuggestions');
+        
+        // Clear previous validation state
+        usernameField.classList.remove('is-invalid', 'is-valid');
+        suggestionsContainer.style.display = 'none';
+        suggestionsContainer.innerHTML = '';
+        
+        if (username.length >= 3) {
+            // Check username availability via AJAX
+            fetch(`/check-username?username=${encodeURIComponent(username)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.available) {
+                        usernameField.classList.add('is-valid');
+                        usernameField.classList.remove('is-invalid');
+                    } else {
+                        usernameField.classList.add('is-invalid');
+                        usernameField.classList.remove('is-valid');
+                        
+                        // Show Google-style suggestions if available
+                        if (data.suggestions && data.suggestions.length > 0) {
+                            suggestionsContainer.style.display = 'block';
+                            suggestionsContainer.innerHTML = `
+                                <div class="text-muted small mb-1">This username is taken. You can use:</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    ${data.suggestions.slice(0, 3).map(suggestion => `
+                                        <button type="button" class="btn btn-sm btn-outline-success username-suggestion" 
+                                                style="color: #198754; border-color: #198754; font-weight: 500;"
+                                                onclick="selectUsername('${suggestion}')">
+                                            ${suggestion}
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            `;
+                        }
+                    }
+                })
+                .catch(error => {
+                    
+                });
+        }
+    });
+
+    // Function to select a suggested username
+    function selectUsername(username) {
+        const usernameField = document.querySelector('input[name="username"]');
+        const suggestionsContainer = document.getElementById('usernameSuggestions');
+        
+        usernameField.value = username;
+        usernameField.classList.add('is-valid');
+        usernameField.classList.remove('is-invalid');
+        suggestionsContainer.style.display = 'none';
+        suggestionsContainer.innerHTML = '';
+    }
+
+    // Auto-format phone number based on current branch location
+    document.getElementById('phoneField').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        let branch = '{{ current_user.branch|lower }}';
+        
+        // Only auto-format if user hasn't already included country code
+        if (value.length > 0 && !e.target.value.startsWith('+')) {
+            // Kenya branches
+            if (branch.includes('nairobi') || branch.includes('mombasa') || branch.includes('kisumu') || 
+                branch.includes('nakuru') || branch.includes('eldoret') || branch.includes('kenya')) {
+                if (value.startsWith('07')) {
+                    e.target.value = '+254' + value.substring(1);
+                } else if (value.startsWith('01') || value.startsWith('11')) {
+                    e.target.value = '+254' + value;
+                }
+            }
+            // South Africa branches
+            else if (branch.includes('johannesburg') || branch.includes('cape town') || branch.includes('durban') || 
+                     branch.includes('pretoria') || branch.includes('bloemfontein') || branch.includes('south africa')) {
+                if (value.startsWith('0') && value.length >= 9) {
+                    e.target.value = '+27' + value.substring(1);
+                }
+            }
+            // Nigeria branches
+            else if (branch.includes('lagos') || branch.includes('abuja') || branch.includes('port harcourt') || 
+                     branch.includes('kano') || branch.includes('ibadan') || branch.includes('nigeria')) {
+                if (value.startsWith('08')) {
+                    e.target.value = '+234' + value.substring(1);
+                } else if (value.startsWith('09')) {
+                    e.target.value = '+234' + value.substring(1);
+                } else if (value.startsWith('01') && value.length >= 8) {
+                    e.target.value = '+234' + value;
+                }
+            }
+            // Ghana branches
+            else if (branch.includes('accra') || branch.includes('kumasi') || branch.includes('tamale') || branch.includes('ghana')) {
+                if (value.startsWith('02')) {
+                    e.target.value = '+233' + value.substring(1);
+                }
+            }
+            // Uganda branches
+            else if (branch.includes('kampala') || branch.includes('entebbe') || branch.includes('jinja') || branch.includes('uganda')) {
+                if (value.startsWith('03') || value.startsWith('07')) {
+                    e.target.value = '+256' + value.substring(1);
+                }
+            }
+            // Tanzania branches
+            else if (branch.includes('dar es salaam') || branch.includes('arusha') || branch.includes('mwanza') || branch.includes('tanzania')) {
+                if (value.startsWith('06') || value.startsWith('07')) {
+                    e.target.value = '+255' + value.substring(1);
+                }
+            }
+            // Fallback: try to detect from multi-country patterns
+            else {
+                // Kenya: 07... -> +2547...
+                if (value.startsWith('07')) {
+                    e.target.value = '+254' + value.substring(1);
+                }
+                // Nigeria: 08/09... -> +2348/9...
+                else if (value.startsWith('08') || value.startsWith('09')) {
+                    e.target.value = '+234' + value.substring(1);
+                }
+                // South Africa: 0... -> +27...
+                else if (value.startsWith('0') && value.length >= 9) {
+                    e.target.value = '+27' + value.substring(1);
+                }
+                // Ghana: 02... -> +2332...
+                else if (value.startsWith('02')) {
+                    e.target.value = '+233' + value.substring(1);
+                }
+                // If no pattern matches, leave as is
+            }
+        }
+    });
+
+    // HTML5 datalist approach - no JavaScript needed for basic functionality
+</script>
+{% endblock %}

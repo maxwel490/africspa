@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Africa SPA System | Platform Support and Demo{% endblock %}
+{% block meta_description %}Contact Africa SPA System for platform demos, technical support, and partnership inquiries. Serving 54 African countries with continental salon management technology.{% endblock %}
+{% block meta_keywords %}Africa SPA System contact, platform support, technical assistance, demo scheduling, continental salon management{% endblock %}
+{% block canonical_url %}https://africspa.com/contact{% endblock %}
+{% block og_description %}Contact Africa SPA System for platform demonstrations, technical support, and business inquiries across African markets.{% endblock %}
+
+{# contact_info is passed from route #}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Africa SPA System",
+    "url": "https://africspa.com/contact",
+    "sameAs": [
+        "https://instagram.com/africspa_system",
+        "https://www.linkedin.com/company/africspa-system"
+    ],
+    "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+254-700-000-000",
+        "contactType": "customer service",
+        "areaServed": "Africa",
+        "availableLanguage": ["English", "French", "Arabic", "Portuguese", "Swahili"]
+    }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold mb-3">Contact Africa SPA System</h1>
+        <p class="lead text-muted">Platform support, demos, and partnership inquiries for continental salon management</p>
+        <div class="d-flex justify-content-center gap-4 mb-4">
+            <div class="text-center">
+                <i class="bi bi-headset text-primary fs-2 mb-2"></i>
+                <p class="small mb-0">24/7 Support</p>
+            </div>
+            <div class="text-center">
+                <i class="bi bi-globe-africa text-success fs-2 mb-2"></i>
+                <p class="small mb-0">54 Countries</p>
+            </div>
+            <div class="text-center">
+                <i class="bi bi-shield-check text-warning fs-2 mb-2"></i>
+                <p class="small mb-0">Enterprise Security</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 align-items-stretch">
+        <!-- Contact Information -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-envelope me-2 text-primary"></i>
+                        Get in Touch
+                    </h5>
+                    <div class="contact-item mb-3">
+                        <p class="mb-1"><strong>Platform Support:</strong></p>
+                        <p class="text-muted">
+                            <i class="bi bi-envelope me-2"></i>
+                            <a href="mailto:{{ contact_info.support_email }}" class="text-decoration-none">{{ contact_info.support_email }}</a>
+                        </p>
+                    </div>
+                    <div class="contact-item mb-3">
+                        <p class="mb-1"><strong>Business Inquiries:</strong></p>
+                        <p class="text-muted">
+                            <i class="bi bi-briefcase me-2"></i>
+                            <a href="mailto:{{ contact_info.sales_email }}" class="text-decoration-none">{{ contact_info.sales_email }}</a>
+                        </p>
+                    </div>
+                    <div class="contact-item mb-3">
+                        <p class="mb-1"><strong>Technical Support:</strong></p>
+                        <p class="text-muted">
+                            <i class="bi bi-telephone me-2"></i>
+                            <a href="tel:{{ contact_info.support_phone }}" class="text-decoration-none">{{ contact_info.support_phone }}</a>
+                        </p>
+                    </div>
+                    <div class="contact-item">
+                        <p class="mb-1"><strong>Office Hours:</strong></p>
+                        <p class="text-muted">
+                            <i class="bi bi-clock me-2"></i>
+                            Mon-Fri: 8:00AM-6:00PM GMT+3
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Form -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-envelope me-2 text-primary"></i>
+                        Send Us a Message
+                    </h5>
+                    <form id="contactForm" class="mb-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Your Name *</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Business Email *</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Phone Number *</label>
+                            <input type="tel" class="form-control" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Message *</label>
+                            <textarea class="form-control" name="message" rows="4" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Business Type *</label>
+                            <select class="form-select" name="business_type" required>
+                                <option value="">Select business type</option>
+                                <option value="barbershop">Barbershop</option>
+                                <option value="salon">Beauty Salon</option>
+                                <option value="spa">Spa</option>
+                                <option value="unisex">Unisex Salon</option>
+                                <option value="09:00">9:00 AM GMT+3</option>
+                                <option value="10:00">10:00 AM GMT+3</option>
+                                <option value="11:00">11:00 AM GMT+3</option>
+                                <option value="14:00">2:00 PM GMT+3</option>
+                                <option value="15:00">3:00 PM GMT+3</option>
+                                <option value="16:00">4:00 PM GMT+3</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 rounded-pill">
+                            <i class="bi bi-calendar-event me-2"></i>
+                            Schedule Demo
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regional Offices -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-globe-africa me-2 text-warning"></i>
+                        Regional Presence
+                    </h5>
+                    <p class="text-muted mb-4">Serving African beauty businesses with local support and understanding.</p>
+                    
+                    <div class="regional-office mb-3">
+                        <h6 class="fw-bold text-primary">East Africa</h6>
+                        <p class="small text-muted mb-1">
+                            <i class="bi bi-geo-alt me-1"></i>
+                            Nairobi, Kenya (HQ)
+                        </p>
+                        <p class="small text-muted mb-1">
+                            <i class="bi bi-telephone me-1"></i>
+                            +254-20-XXXX-XXXX
+                        </p>
+                        <p class="small text-muted">
+                            <i class="bi bi-clock me-1"></i>
+                            8:00AM-6:00PM EAT
+                        </p>
+                    </div>
+                    
+                    <div class="regional-office mb-3">
+                        <h6 class="fw-bold text-success">West Africa</h6>
+                        <p class="small text-muted mb-1">
+                            <i class="bi bi-geo-alt me-1"></i>
+                            Lagos, Nigeria
+                        </p>
+                        <p class="small text-muted mb-1">
+                            <i class="bi bi-telephone me-1"></i>
+                            +234-80-XXXX-XXXX
+                        </p>
+                        <p class="small text-muted">
+                            <i class="bi bi-clock me-1"></i>
+                            9:00AM-5:00PM WAT
+                        </p>
+                    </div>
+                    
+                    <div class="regional-office">
+                        <h6 class="fw-bold text-warning">Southern Africa</h6>
+                        <p class="small text-muted mb-1">
+                            <i class="bi bi-geo-alt me-1"></i>
+                            Johannesburg, South Africa
+                        </p>
+                        <p class="small text-muted mb-1">
+                            <i class="bi bi-telephone me-1"></i>
+                            +27-11-XXXX-XXXX
+                        </p>
+                        <p class="small text-muted">
+                            <i class="bi bi-clock me-1"></i>
+                            8:00AM-6:00PM SAST
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 bg-light rounded-4">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="fw-bold mb-3">Ready to Get Started?</h4>
+                            <p class="text-muted mb-0">Explore Africa SPA System through our free Trial with PayPal payment setup.</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="d-grid gap-2">
+                                <a href="/trial" class="btn btn-warning rounded-pill">
+                                    <i class="bi bi-rocket-takeoff me-2"></i>
+                                    Start Free Trial
+                                </a>
+                                <a href="/contact" class="btn btn-primary rounded-pill">
+                                    <i class="bi bi-envelope me-2"></i>
+                                    Contact Us
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .contact-item {
+        padding: 1rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .contact-item:last-child {
+        border-bottom: none;
+    }
+    
+    .regional-office {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-success:hover {
+        background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+    }
+    
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+</style>
+
+<script>
+document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Collect form data
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    // Basic validation
+    if (!data.name || !data.email || !data.message) {
+        alert('Please fill in your name, email, and message');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Sending...';
+    submitBtn.disabled = true;
+    
+    // Simulate API call (replace with actual implementation)
+    setTimeout(() => {
+        submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Message Sent!';
+        submitBtn.classList.remove('btn-success');
+        submitBtn.classList.add('btn-outline-success');
+        
+        // Show success message
+        setTimeout(() => {
+            const successMessage = `✅ Message Sent Successfully!\n\n` +
+                `Thank you, ${data.name}!\n` +
+                `We've received your message and will respond within 24 hours.\n\n` +
+                `Response will be sent to: ${data.email}\n\n` +
+                `For urgent inquiries: Call +254-700-000-000`;
+            
+            alert(successMessage);
+            
+            // Reset form
+            this.reset();
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('btn-outline-success');
+            submitBtn.classList.add('btn-success');
+        }, 2000);
+    }, 2000);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0">
+                    <i class="fas fa-credit-card me-2"></i>Payment Settings
+                </h4>
+                <a href="{{ url_for('accountant.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cog me-2"></i>Configure Payment Options
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="paymentSettingsForm">
+                        <input type="hidden" name="action" value="save_config">
+                        
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Payment Configuration:</strong> Select which payment methods are available for your salon. 
+                                    You can customize the display names and choose a default payment method.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive mb-4">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="40">Enable</th>
+                                        <th>Payment Method</th>
+                                        <th>Display Name</th>
+                                        <th>Icon</th>
+                                        <th width="120">Default</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for method in all_methods %}
+                                    <tr>
+                                        <td>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="enable_{{ method.code }}" 
+                                                       id="enable_{{ method.code }}"
+                                                       {{ 'checked' if method.code in enabled_codes }}>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <label for="enable_{{ method.code }}" class="form-check-label mb-0">
+                                                <i class="{{ method.icon }} me-2"></i>
+                                                {{ method.name }}
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" 
+                                                   name="name_{{ method.code }}" 
+                                                   value="{{ method.name }}"
+                                                   placeholder="Display name">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" 
+                                                   name="icon_{{ method.code }}" 
+                                                   value="{{ method.icon }}"
+                                                   placeholder="Font Awesome icon">
+                                        </td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" 
+                                                       name="default_method" 
+                                                       value="{{ method.code }}"
+                                                       id="default_{{ method.code }}"
+                                                       {{ 'checked' if method.code in enabled_codes and (current_options|selectattr('code', 'equalto', method.code)|selectattr('is_default')|list|length > 0) }}>
+                                                <label class="form-check-label" for="default_{{ method.code }}">
+                                                    Default
+                                                </label>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-lightbulb me-2"></i>Quick Tips
+                                        </h6>
+                                        <ul class="mb-0 small">
+                                            <li>Enable only the payment methods you actually accept</li>
+                                            <li>Customize display names to match your local terminology</li>
+                                            <li>Set a default payment method for faster data entry</li>
+                                            <li>Icons use Font Awesome classes (e.g., "fas fa-mobile-alt")</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-eye me-2"></i>Current Configuration
+                                        </h6>
+                                        {% if current_options %}
+                                            <div class="small">
+                                                <strong>Enabled methods:</strong>
+                                                <ul class="mb-0">
+                                                    {% for option in current_options %}
+                                                    <li>
+                                                        <i class="{{ option.icon }} me-1"></i>
+                                                        {{ option.name }}
+                                                        {% if option.is_default %}<span class="badge bg-primary ms-1">Default</span>{% endif %}
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        {% else %}
+                                            <p class="text-muted mb-0 small">Using default payment configuration</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save Configuration
+                                </button>
+                                <a href="{{ url_for('accountant.dashboard') }}" class="btn btn-secondary ms-2">
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Ensure at least one payment method is always enabled
+    $('#paymentSettingsForm').on('submit', function(e) {
+        var enabledCount = $('input[type="checkbox"][name^="enable_"]:checked').length;
+        
+        if (enabledCount === 0) {
+            e.preventDefault();
+            alert('Please enable at least one payment method.');
+            return false;
+        }
+        
+        // Ensure a default method is selected among enabled methods
+        var enabledDefault = false;
+        $('input[type="checkbox"][name^="enable_"]:checked').each(function() {
+            var methodCode = $(this).attr('name').replace('enable_', '');
+            if ($('#default_' + methodCode).is(':checked')) {
+                enabledDefault = true;
+                return false;
+            }
+        });
+        
+        if (!enabledDefault) {
+            e.preventDefault();
+            alert('Please select a default payment method among the enabled options.');
+            return false;
+        }
+    });
+    
+    // Auto-select default when enabling a method if no default is set
+    $('input[type="checkbox"][name^="enable_"]').on('change', function() {
+        if ($(this).is(':checked')) {
+            var methodCode = $(this).attr('name').replace('enable_', '');
+            var hasDefault = $('input[type="radio"][name="default_method"]:checked').length > 0;
+            
+            if (!hasDefault) {
+                $('#default_' + methodCode).prop('checked', true);
+            }
+        } else {
+            // If disabling the current default, clear the default selection
+            var methodCode = $(this).attr('name').replace('enable_', '');
+            if ($('#default_' + methodCode).is(':checked')) {
+                $('#default_' + methodCode).prop('checked', false);
+            }
+        }
+    });
+    
+    // Only allow default selection for enabled methods
+    $('input[type="radio"][name="default_method"]').on('change', function() {
+        var methodCode = $(this).val();
+        if (!$('#enable_' + methodCode).is(':checked')) {
+            $(this).prop('checked', false);
+            alert('Please enable this payment method before setting it as default.');
+        }
+    });
+});
+</script>
+{% endblock %}

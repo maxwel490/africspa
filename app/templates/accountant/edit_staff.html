@@ -1,0 +1,122 @@
+{% extends "accountant/accountant_base.html" %}
+
+{% block accountant_content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit Staff Profile</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Full Names (First & Last)</label>
+                            <input type="text" name="full_name" class="form-control" value="{{ staff.full_name or '' }}" placeholder="Full Name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">System Username</label>
+                            <input type="text" name="username" id="editUsernameAccountant" class="form-control" value="{{ staff.username }}" required>
+                            <div id="usernameSuggestions" class="mt-2" style="display: none;"></div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Phone Number</label>
+                                <input type="tel" name="phone" class="form-control" value="{{ staff.phone or '' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">National ID No.</label>
+                                <input type="text" name="id_number" class="form-control" value="{{ staff.id_number or '' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Email Address</label>
+                            <input type="email" name="email" class="form-control" value="{{ staff.email or '' }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Primary Specialty</label>
+                            <input type="text" name="specialty" class="form-control" value="{{ staff.specialty or '' }}" placeholder="e.g. Braiding, Nails">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Base Salary (KSh)</label>
+                            <input type="number" step="0.01" name="base_salary" class="form-control" value="{{ staff.base_salary }}">
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('accountant.manage_staff') }}" class="btn btn-light border px-4 fw-bold">Cancel</a>
+                            <button type="submit" class="btn btn-dark px-4 fw-bold shadow-sm">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Real-time username validation with Google-style suggestions for accountant edit
+document.getElementById('editUsernameAccountant')?.addEventListener('input', function() {
+    const username = this.value.trim();
+    const usernameField = this;
+    const suggestionsContainer = document.getElementById('usernameSuggestions');
+    const currentUsername = '{{ staff.username }}'; // Current username to exclude from check
+    
+    // Clear previous validation state
+    usernameField.classList.remove('is-invalid', 'is-valid');
+    suggestionsContainer.style.display = 'none';
+    suggestionsContainer.innerHTML = '';
+    
+    if (username.length >= 3 && username !== currentUsername) {
+        // Check username availability via AJAX
+        fetch(`/check-username?username=${encodeURIComponent(username)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.available) {
+                    usernameField.classList.add('is-valid');
+                    usernameField.classList.remove('is-invalid');
+                } else {
+                    usernameField.classList.add('is-invalid');
+                    usernameField.classList.remove('is-valid');
+                    
+                    // Show Google-style suggestions if available
+                    if (data.suggestions && data.suggestions.length > 0) {
+                        suggestionsContainer.style.display = 'block';
+                        suggestionsContainer.innerHTML = `
+                            <div class="text-muted small mb-1">This username is taken. You can use:</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                ${data.suggestions.slice(0, 3).map(suggestion => `
+                                    <button type="button" class="btn btn-sm btn-outline-success username-suggestion" 
+                                            style="color: #198754; border-color: #198754; font-weight: 500;"
+                                            onclick="selectUsernameAccountant('${suggestion}')">
+                                        ${suggestion}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                
+            });
+    }
+});
+
+// Function to select a suggested username for accountant edit
+function selectUsernameAccountant(username) {
+    const usernameField = document.getElementById('editUsernameAccountant');
+    const suggestionsContainer = document.getElementById('usernameSuggestions');
+    
+    usernameField.value = username;
+    usernameField.classList.add('is-valid');
+    usernameField.classList.remove('is-invalid');
+    suggestionsContainer.style.display = 'none';
+    suggestionsContainer.innerHTML = '';
+}
+</script>
+{% endblock %}

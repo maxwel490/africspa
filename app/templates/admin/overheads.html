@@ -1,0 +1,98 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_content %}
+<div class="container-fluid py-2">
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger text-white fw-bold py-3">
+                    <i class="bi bi-receipt me-2"></i>Record Branch Overheads
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="fw-bold small text-uppercase">Branch Location</label>
+                            <select name="branch" class="form-select border-danger" required>
+                                <option value="" disabled selected>Select Branch</option>
+                                {% for b in managed_branches %}
+                                    <option value="{{ b }}" {% if request.args.get('branch') == b %}selected{% endif %}>{{ b }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="fw-bold small text-uppercase">Expense Category</label>
+                            <select name="category" class="form-select" required>
+                                <option value="Monthly Rent">Monthly Rent</option>
+                                <option value="KPLC (Electricity)">KPLC (Electricity)</option>
+                                <option value="Water Bill">Water Bill</option>
+                                <option value="Internet/Wifi">Internet/Wifi</option>
+                                <option value="Marketing/Ads">Marketing/Ads</option>
+                                <option value="Other Maintenance">Other Maintenance</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="fw-bold small text-uppercase">Amount Paid (KSh)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">KSh</span>
+                                <input type="number" step="0.01" name="amount" class="form-control form-control-lg" placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="fw-bold small text-uppercase">Billing Date</label>
+                            <input type="date" name="expense_date" class="form-control" required>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger btn-lg shadow-sm">
+                                Save Branch Expense
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">Recent Branch Expenses</h5>
+                    <span class="badge bg-light text-dark border">Confidential Data</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th class="ps-4">Date</th>
+                                <th>Branch</th>
+                                <th>Category</th>
+                                <th class="text-end pe-4">Cost (KSh)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if overheads %}
+                                {% for expense in overheads %}
+                                <tr>
+                                    <td class="ps-4">{{ expense.expense_date.strftime('%d %b %Y') }}</td>
+                                    <td><span class="badge bg-dark">{{ expense.branch }}</span></td>
+                                    <td><span class="fw-bold">{{ expense.category }}</span></td>
+                                    <td class="text-end pe-4 fw-bold text-danger">
+                                        - {{ "{:,.2f}".format(expense.amount) }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr class="text-center text-muted">
+                                    <td colspan="4" class="py-5">No records found for the selected view.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

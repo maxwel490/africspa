@@ -1,0 +1,225 @@
+{# templates/accountant/commissions.html #}
+{% extends "accountant/accountant_base.html" %}
+
+{% block accountant_content %} 
+<div class="container-fluid py-4">
+    <div class="row align-items-center mb-4 g-3">
+        <div class="col-lg-6">
+            <h2 class="h3 fw-bold text-dark mb-1">
+                <i class="bi bi-wallet2 me-2 text-primary"></i>Weekly Payouts
+            </h2>
+            <p class="text-muted mb-0">
+                <span class="badge bg-light text-dark border shadow-sm">
+                    <i class="bi bi-calendar3 me-1"></i> 
+                    {{ start_of_week.strftime('%b %d') }} — {{ end_of_week.strftime('%b %d, %Y') }}
+                </span>
+            </p>
+        </div>
+        <div class="col-lg-6">
+            <div class="d-flex justify-content-lg-end gap-2 align-items-center">
+                <div class="btn-group shadow-sm">
+                    <a href="{{ url_for('accountant.weekly_commissions', start_date=prev_week) }}" class="btn btn-white border">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                    <a href="{{ url_for('accountant.weekly_commissions', start_date=next_week) }}" class="btn btn-white border">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+                <form action="{{ url_for('accountant.weekly_commissions') }}" method="GET" class="d-flex gap-1">
+                    <input type="date" name="start_date" class="form-control form-control-sm border shadow-sm" onchange="this.form.submit()">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-primary text-white p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="small text-uppercase mb-1 opacity-75">Total Net Payout</p>
+                        <h3 class="mb-0 fw-bold">KSh {{ "{:,.2f}".format(total_payout) }}</h3>
+                    </div>
+                    <div class="fs-1 opacity-25"><i class="bi bi-cash-stack"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-white p-3 h-100 border-start border-primary border-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="small text-uppercase text-muted mb-1">Active Recipients</p>
+                        <h3 class="mb-0 fw-bold text-dark">{{ payout_rows|length }}</h3>
+                    </div>
+                    <div class="fs-1 text-primary opacity-25"><i class="bi bi-people"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-white p-3 h-100 border-start border-info border-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="small text-uppercase text-muted mb-1">Total Deductions</p>
+                        <h3 class="mb-0 fw-bold text-dark">
+                            KSh {{ "{:,.2f}".format(total_deductions or 0) }}
+                        </h3>
+                    </div>
+                    <div class="fs-1 text-info opacity-25"><i class="bi bi-graph-up"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0 fw-bold text-dark">Specialty Group Payouts</h5>
+        <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i> Print Report
+        </button>
+    </div>
+
+    {% if no_salonists %}
+    <div class="alert alert-info text-center py-5">
+        <i class="bi bi-info-circle me-2"></i>
+        <h5 class="alert-heading">No Salonists Found</h5>
+        <p class="mb-0">This salon has no salonists yet. Add salonists to see commission payouts and specialty breakdowns.</p>
+        <hr>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-primary text-white p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="small text-uppercase mb-1 opacity-75">Total Net Payout</p>
+                            <h3 class="mb-0 fw-bold">KSh 0.00</h3>
+                        </div>
+                        <div class="fs-1 opacity-25"><i class="bi bi-cash-stack"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-white p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="small text-uppercase text-muted mb-1">Active Recipients</p>
+                            <h3 class="mb-0 fw-bold text-dark">0</h3>
+                        </div>
+                        <div class="fs-1 text-primary opacity-25"><i class="bi bi-people"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-white p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="small text-uppercase text-muted mb-1">Total Deductions</p>
+                            <h3 class="mb-0 fw-bold text-dark">KSh 0.00</h3>
+                        </div>
+                        <div class="fs-1 text-info opacity-25"><i class="bi bi-graph-up"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    {% for specialty in specialty_order %}
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold text-dark">{{ specialty }} Team</h6>
+            <span class="badge bg-light text-dark border">
+                {{ specialty_totals[specialty].count }} staff • Net KSh {{ "{:,.2f}".format(specialty_totals[specialty].net or 0) }}
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3 text-uppercase small text-muted fw-bold">Salonist Name</th>
+                        <th class="text-end text-uppercase small text-muted fw-bold">Gross</th>
+                        <th class="text-end text-uppercase small text-muted fw-bold">Deductions</th>
+                        <th class="text-end pe-4 text-uppercase small text-muted fw-bold">Net Commission</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in grouped_summary[specialty] %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary-soft text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">
+                                    {{ row.worker_name[0]|upper }}
+                                </div>
+                                <span class="fw-bold text-dark fs-6">{{ row.worker_name }}</span>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <span class="text-dark fw-semibold">KSh {{ "{:,.2f}".format(row.gross or 0) }}</span>
+                        </td>
+                        <td class="text-end">
+                            <span class="text-danger fw-semibold">KSh {{ "{:,.2f}".format(row.deduction or 0) }}</span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <span class="text-success fw-bold fs-5">KSh {{ "{:,.2f}".format(row.net or 0) }}</span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">No {{ specialty }} payouts this week.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td class="ps-4 fw-bold">{{ specialty }} Totals</td>
+                        <td class="text-end fw-bold">KSh {{ "{:,.2f}".format(specialty_totals[specialty].gross or 0) }}</td>
+                        <td class="text-end fw-bold text-danger">KSh {{ "{:,.2f}".format(specialty_totals[specialty].deduction or 0) }}</td>
+                        <td class="text-end pe-4 fw-bold text-success">KSh {{ "{:,.2f}".format(specialty_totals[specialty].net or 0) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden mt-4">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-bold text-dark">Deduction Log (Selected Week)</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3 text-uppercase small text-muted fw-bold">Salonist</th>
+                        <th class="text-uppercase small text-muted fw-bold">Type</th>
+                        <th class="text-uppercase small text-muted fw-bold">Reason</th>
+                        <th class="text-end pe-4 text-uppercase small text-muted fw-bold">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in deduction_rows %}
+                    <tr>
+                        <td class="ps-4 fw-bold">{{ row.worker_name }}</td>
+                        <td class="small text-uppercase">{{ row.deduction_type.replace('_', ' ') }}</td>
+                        <td class="small text-muted">{{ row.reason or '-' }}</td>
+                        <td class="text-end pe-4 text-danger fw-bold">KSh {{ "{:,.2f}".format(row.amount or 0) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">No deductions for this week.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .bg-primary-soft { background-color: rgba(13, 110, 253, 0.1); }
+    .bg-success-soft { background-color: rgba(25, 135, 84, 0.1); }
+    .btn-white { background: white; }
+    .card { transition: transform 0.2s ease; }
+    @media print {
+        .btn-group, form, .btn-outline-secondary { display: none; }
+        .card { box-shadow: none !important; border: 1px solid #ddd !important; }
+    }
+</style>
+{% endblock %}

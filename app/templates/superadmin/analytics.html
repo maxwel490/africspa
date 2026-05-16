@@ -1,0 +1,202 @@
+{% extends "superadmin/superadmin_base.html" %}
+
+{% block title %}Analytics - Super Admin{% endblock %}
+
+{% set page_title = '📊 System Analytics' %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-muted mb-0">Platform-wide usage statistics and insights</p>
+        </div>
+        <div>
+            <form method="GET" class="d-flex gap-2">
+                <select name="days" class="form-select" onchange="this.form.submit()">
+                    <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 days</option>
+                    <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 days</option>
+                    <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+                    <option value="365" {% if days == 365 %}selected{% endif %}>Last year</option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ salon_growth|length }}</h4>
+                            <p class="card-text">New Salons ({{ days }} days)</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-building fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ regional_stats|length }}</h4>
+                            <p class="card-text">Active Regions</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-globe fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ top_salons|length }}</h4>
+                            <p class="card-text">Top Performing Salons</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-trophy fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Regional Distribution -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-map-marked-alt me-2"></i>Regional Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if regional_stats %}
+                        {% set country_flags = {'KE': '🇰🇪', 'NG': '🇳🇬', 'ZA': '🇿🇦', 'EG': '🇪🇬', 'GH': '🇬🇭', 'CM': '🇨🇲', 'CI': '🇨🇮', 'TZ': '🇹🇿', 'UG': '🇺🇬', 'US': '🇺🇸'} %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Country</th>
+                                        <th class="text-end">Salons</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for country, count in regional_stats %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                {{ country_flags.get(country, '🌍') }} {{ country }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="fw-bold">{{ count }}</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-globe fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No regional data available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Performing Salons -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-trophy me-2"></i>Top Performing Salons
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if top_salons %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Salon</th>
+                                        <th class="text-end">Appointments</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for salon_name, appointments in top_salons %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ salon_name }}</td>
+                                        <td class="text-end">
+                                            <span class="badge bg-success">{{ appointments }}</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No appointment data available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Salon Growth Timeline -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-chart-line me-2"></i>Salon Growth Timeline ({{ days }} days)
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if salon_growth %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th class="text-end">New Salons</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for date, count in salon_growth %}
+                            <tr>
+                                <td>{{ date }}</td>
+                                <td class="text-end">
+                                    <span class="badge bg-primary">{{ count }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No growth data available for the selected period</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

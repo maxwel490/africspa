@@ -1,0 +1,168 @@
+{% extends "salonist/salonist_base.html" %}
+
+{% block salonist_title %}Work History: {{ start_of_week.strftime('%b %d') }} - {{ end_of_week.strftime('%b %d') }}{% endblock %}
+
+{% block salonist_content %}
+<div class="container-fluid">
+    <div class="row mb-4 g-3">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm border-start border-primary border-4">
+                <div class="card-body">
+                    <h6 class="text-uppercase small fw-bold text-muted">Weekly Commission</h6>
+                    <h2 class="mb-0 text-primary">KSh {{ "{:,.2f}".format(total_commission) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm border-start border-success border-4">
+                <div class="card-body">
+                    <h6 class="text-uppercase small fw-bold text-muted">Total Tips</h6>
+                    <h2 class="mb-0 text-success">KSh {{ "{:,.2f}".format(total_tips) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm border-start border-danger border-4">
+                <div class="card-body">
+                    <h6 class="text-uppercase small fw-bold text-muted">Total Deductions</h6>
+                    <h2 class="mb-0 text-danger">- KSh {{ "{:,.2f}".format(total_deductions or 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm border-start border-dark border-4">
+                <div class="card-body">
+                    <h6 class="text-uppercase small fw-bold text-muted">Net Week Payout</h6>
+                    <h2 class="mb-0 text-dark">KSh {{ "{:,.2f}".format(net_weekly_payout or 0) }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <h5 class="mb-0 fw-bold">Earnings Log</h5>
+            
+            <div class="d-flex align-items-center gap-2">
+                <label for="jumpToDate" class="small fw-bold text-muted text-nowrap mb-0">Jump to Week:</label>
+                <input type="date" id="jumpToDate" class="form-control form-control-sm" value="{{ selected_date }}" onchange="goToDate(this.value)">
+                
+                <div class="btn-group shadow-sm ms-2">
+                    <a href="{{ url_for('salonist.work_history', week='prev', date=selected_date) }}" class="btn btn-sm btn-outline-dark">Prev</a>
+                    <a href="{{ url_for('salonist.work_history') }}" class="btn btn-sm btn-outline-dark">Current</a>
+                    <a href="{{ url_for('salonist.work_history', week='next', date=selected_date) }}" class="btn btn-sm btn-outline-dark">Next</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Date</th>
+                            <th>Service</th>
+                            <th class="text-end pe-4">Earnings</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for work in my_work %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">{{ work.appointment_time.strftime('%a, %b %d') }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ work.service_type }}</div>
+                                <span class="badge bg-light text-dark border">#{{ work.receipt_no }}</span>
+                                {% if work.payment_method == 'Redo/Internal' or (work.notes and 'Rectification' in work.notes) %}
+                                <span class="badge bg-warning-subtle text-dark border ms-1">Service Rectification</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4 fw-bold text-success">+ KSh {{ "{:,.2f}".format(work.commission_earned) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-muted">No work found for this week.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3 mt-4">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-journal-check me-2 text-danger"></i>Deduction Summary By Type (Selected Week)</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Deduction Type</th>
+                            <th class="text-end pe-4">Total Amount (KSh)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for deduction_type, total in deduction_totals_by_type.items() %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-uppercase small">{{ deduction_type.replace('_', ' ') }}</td>
+                            <td class="text-end pe-4 text-danger fw-bold">- {{ "{:,.2f}".format(total or 0) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="2" class="text-center py-4 text-muted">No deductions recorded for this week.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3 mt-4">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-receipt me-2 text-secondary"></i>Deduction Details (Selected Week)</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Type</th>
+                            <th>Reason</th>
+                            <th class="text-end pe-4">Amount (KSh)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in weekly_deductions %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-uppercase small">{{ item.deduction_type.replace('_', ' ') }}</td>
+                            <td class="small text-muted">{{ item.reason or '-' }}</td>
+                            <td class="text-end pe-4 text-danger fw-bold">- {{ "{:,.2f}".format(item.amount or 0) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-muted">No deduction details for this week.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /**
+     * Redirects the user to the work history page for the week 
+     * containing the selected date.
+     */
+    function goToDate(selectedDate) {
+        if (selectedDate) {
+            // This assumes your backend route handles a 'date' parameter
+            window.location.href = "{{ url_for('salonist.work_history') }}?date=" + selectedDate;
+        }
+    }
+</script>
+{% endblock %}

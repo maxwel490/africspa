@@ -1,0 +1,198 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Add Backbar Group - {{ current_user.branch }}{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 fw-bold text-dark mb-1">
+                        <i class="bi bi-plus-circle me-2 text-primary"></i>Add Backbar Group
+                    </h1>
+                    <p class="text-muted mb-0">Create a new deduction group for your staff</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.backbar_groups') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Groups
+                    </a>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form method="POST" class="row g-4">
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Group Name *</label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g., Braiders, Barbers, Nail Technicians" required>
+                            <div class="form-text">Choose a descriptive name for this deduction group.</div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Description</label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="Optional description of what this group is for..."></textarea>
+                            <div class="form-text">Explain what types of deductions this group handles.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Target Specialties</label>
+                            <div class="border rounded p-3 bg-light">
+                                {% if specialties %}
+                                {% for specialty in specialties %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="target_specialties" 
+                                           value="{{ specialty }}" id="specialty_{{ loop.index }}">
+                                    <label class="form-check-label" for="specialty_{{ loop.index }}">
+                                        {{ specialty }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <p class="text-muted small mb-0">No specialties available. All salonists will be included.</p>
+                                {% endif %}
+                            </div>
+                            <div class="form-text">Select the specialties that should be included in this group. Leave blank to include all salonists.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Target Employment Types</label>
+                            <div class="border rounded p-3 bg-light">
+                                {% if employment_types %}
+                                {% for emp_type in employment_types %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="target_employment_types" 
+                                           value="{{ emp_type }}" id="emp_type_{{ loop.index }}">
+                                    <label class="form-check-label" for="emp_type_{{ loop.index }}">
+                                        {{ emp_type }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <p class="text-muted small mb-0">No employment types available.</p>
+                                {% endif %}
+                            </div>
+                            <div class="form-text">Optional: Filter by employment type in addition to specialties.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Group Color</label>
+                            <select name="color" class="form-select">
+                                <option value="primary">Primary (Blue)</option>
+                                <option value="success">Success (Green)</option>
+                                <option value="danger">Danger (Red)</option>
+                                <option value="warning">Warning (Yellow)</option>
+                                <option value="info">Info (Cyan)</option>
+                                <option value="secondary">Secondary (Gray)</option>
+                                <option value="dark">Dark (Black)</option>
+                            </select>
+                            <div class="form-text">Choose a color for the group's appearance in the interface.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Group Icon</label>
+                            <select name="icon" class="form-select">
+                                <option value="bi-people">People (Default)</option>
+                                <option value="bi-scissors">Scissors</option>
+                                <option value="bi-razor">Razor</option>
+                                <option value="bi-palette">Palette</option>
+                                <option value="bi-hand-index">Hand Index</option>
+                                <option value="bi-star">Star</option>
+                                <option value="bi-heart">Heart</option>
+                                <option value="bi-gem">Gem</option>
+                                <option value="bi-brush">Brush</option>
+                                <option value="bi-shop">Shop</option>
+                            </select>
+                            <div class="form-text">Choose an icon to represent this group.</div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                <div class="text-muted small">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Groups with no criteria will include all salonists in the salon.
+                                </div>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin.backbar_groups') }}" class="btn btn-outline-secondary">
+                                        Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle me-2"></i>Create Group
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="bi bi-lightbulb me-2"></i>Group Examples
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-primary mb-2">Hair Braiding Salon</h6>
+                        <ul class="small mb-0">
+                            <li><strong>Name:</strong> Braiders</li>
+                            <li><strong>Specialties:</strong> Conrows, Cornrows, Braids</li>
+                            <li><strong>Color:</strong> Primary</li>
+                            <li><strong>Icon:</strong> Scissors</li>
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-success mb-2">Barbershop</h6>
+                        <ul class="small mb-0">
+                            <li><strong>Name:</strong> Barbers</li>
+                            <li><strong>Specialties:</strong> Barber, Barbering</li>
+                            <li><strong>Color:</strong> Info</li>
+                            <li><strong>Icon:</strong> Razor</li>
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-warning mb-2">Nail Salon</h6>
+                        <ul class="small mb-0">
+                            <li><strong>Name:</strong> Nail Technicians</li>
+                            <li><strong>Specialties:</strong> Nails, Manicure, Pedicure</li>
+                            <li><strong>Color:</strong> Pink</li>
+                            <li><strong>Icon:</strong> Palette</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-secondary mb-2">All Staff</h6>
+                        <ul class="small mb-0">
+                            <li><strong>Name:</strong> All Specialists</li>
+                            <li><strong>Specialties:</strong> (None selected)</li>
+                            <li><strong>Color:</strong> Secondary</li>
+                            <li><strong>Icon:</strong> People</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="bi bi-question-circle me-2"></i>How Groups Work
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <p class="mb-3">Backbar groups allow you to organize staff deductions based on:</p>
+                        <ul class="mb-3">
+                            <li><strong>Specialties:</strong> Hair braiders, barbers, nail techs, etc.</li>
+                            <li><strong>Employment Type:</strong> Full-time, part-time, commission, etc.</li>
+                            <li><strong>Custom Criteria:</strong> Any combination you need</li>
+                        </ul>
+                        <p class="mb-0">When you create a deduction in the backbar system, you can assign it to a specific group, and it will only apply to staff members who match that group's criteria.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "accountant/accountant_base.html" %}
+
+{% block accountant_content %}
+<div class="container-fluid py-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 fw-bold text-dark mb-0"><i class="bi bi-shop me-2"></i>Retail Shop Manager</h2>
+            <p class="text-muted small mb-0">Managing retail merchandise for {{ current_user.branch }}</p>
+        </div>
+        <div class="input-group input-group-sm w-25">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+            <input type="text" id="shopSearch" class="form-control border-start-0" placeholder="Search products...">
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted small text-uppercase fw-bold">Shop Items</h6>
+                    <h4 class="fw-bold mb-0">{{ shop_products|length }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted small text-uppercase fw-bold">Inventory Value</h6>
+                    {% set total_value = shop_products | sum(attribute='unit_price') %}
+                    <h4 class="fw-bold mb-0 text-primary">KSh {{ "{:,.2f}".format(total_value) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-5" id="shopGrid">
+        {% for product in shop_products %}
+        <div class="col-md-3 product-card">
+            <div class="card h-100 border-0 shadow-sm hover-shadow">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <span class="badge bg-info-subtle text-info border border-info mb-2">{{ product.category }}</span>
+                        <h6 class="fw-bold mb-1">{{ product.name }}</h6>
+                        <p class="text-muted extra-small">ID: #{{ product.id }}</p>
+                    </div>
+                    
+                    <div class="bg-light rounded p-2 mb-3">
+                        <small class="text-muted d-block small text-uppercase">Retail Price</small>
+                        <span class="h5 fw-bold text-dark">KSh {{ "{:,.2f}".format(product.unit_price) }}</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-start">
+                            <small class="text-muted d-block">In Stock</small>
+                            <span class="fw-bold {% if product.stock_quantity < 5 %}text-danger{% else %}text-success{% endif %}">
+                                {{ product.stock_quantity }} units
+                            </span>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-primary" title="Quick Sale"
+                                data-product-id="{{ product.id }}"
+                                data-product-name="{{ product.name }}"
+                                data-product-price="{{ product.unit_price }}"
+                                onclick="openSaleModal(this)">
+                                <i class="bi bi-cart-dash"></i>
+                            </button>
+                            <a class="btn btn-sm btn-dark" href="{{ url_for('accountant.settlements') }}" title="Restock via Settlements">
+                                <i class="bi bi-plus-lg"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+            <h6 class="fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Recent Shop Sales</h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr class="extra-small text-uppercase">
+                        <th class="ps-3">TXN ID</th>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Total Price</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in recent_sales %}
+                    <tr>
+                        <td class="ps-3 small fw-bold text-primary">{{ sale.transaction_no }}</td>
+                        <td class="fw-medium">{{ sale.product_obj.name if sale.product_obj and hasattr(sale.product_obj, 'name') else 'Unknown Product' }}</td>
+                        <td>{{ sale.quantity }}</td>
+                        <td class="fw-bold text-dark">KSh {{ "{:,.2f}".format(sale.total_amount) }}</td>
+                        <td class="text-muted small">{{ sale.timestamp.strftime('%H:%M') }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center py-4 text-muted">No sales recorded today.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="quickSaleModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <form action="{{ url_for('accountant.process_direct_sale') }}" method="POST" class="modal-content border-0 shadow">
+            <div class="modal-body">
+                <h6 class="fw-bold mb-3">Direct Sale: <span id="modalProdName" class="text-primary"></span></h6>
+                <input type="hidden" name="product_id" id="modalProdId">
+                
+                <div class="mb-3">
+                    <label class="small text-muted mb-1">Transaction/Receipt No.</label>
+                    <input type="text" name="transaction_no" class="form-control form-control-sm" placeholder="e.g. RCPT-1234" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="small text-muted mb-1">Quantity to Sell</label>
+                    <input type="number" name="quantity" class="form-control form-control-sm" value="1" min="1" required>
+                </div>
+
+                <div class="p-2 bg-light rounded text-center">
+                    <small class="text-muted d-block extra-small text-uppercase">Price per unit</small>
+                    <b class="text-dark" id="modalProdPrice"></b>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-2">
+                <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-sm btn-primary px-3">Confirm Sale</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .hover-shadow:hover { transform: translateY(-5px); transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
+    .extra-small { font-size: 0.75rem; }
+    .table thead th { font-weight: 600; font-size: 0.7rem; color: #6c757d; }
+</style>
+
+<script>
+    // Live search functionality
+    document.getElementById('shopSearch').addEventListener('keyup', function() {
+        let filter = this.value.toLowerCase();
+        document.querySelectorAll('.product-card').forEach(card => {
+            let name = card.querySelector('h6').textContent.toLowerCase();
+            card.style.display = name.includes(filter) ? '' : 'none';
+        });
+    });
+
+    // Handle Sale Modal Population
+    function openSaleModal(button) {
+        const id = button.dataset.productId;
+        const name = button.dataset.productName;
+        const price = button.dataset.productPrice;
+        
+        document.getElementById('modalProdId').value = id;
+        document.getElementById('modalProdName').innerText = name;
+        document.getElementById('modalProdPrice').innerText = "KSh " + parseFloat(price).toLocaleString();
+        
+        new bootstrap.Modal(document.getElementById('quickSaleModal')).show();
+    }
+</script>
+{% endblock %}

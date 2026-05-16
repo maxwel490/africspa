@@ -1,0 +1,217 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Edit Backbar Group - {{ current_user.branch }}{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 fw-bold text-dark mb-1">
+                        <i class="bi bi-pencil me-2 text-primary"></i>Edit Backbar Group
+                    </h1>
+                    <p class="text-muted mb-0">Update "{{ group.name }}" group settings</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.backbar_groups') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Groups
+                    </a>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form method="POST" class="row g-4">
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Group Name *</label>
+                            <input type="text" name="name" class="form-control" value="{{ group.name }}" placeholder="e.g., Braiders, Barbers, Nail Technicians" required>
+                            <div class="form-text">Choose a descriptive name for this deduction group.</div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Description</label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="Optional description of what this group is for...">{{ group.description or '' }}</textarea>
+                            <div class="form-text">Explain what types of deductions this group handles.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Target Specialties</label>
+                            <div class="border rounded p-3 bg-light">
+                                {% set selected_specialties = group.get_target_specialties() %}
+                                {% if specialties %}
+                                {% for specialty in specialties %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="target_specialties" 
+                                           value="{{ specialty }}" id="specialty_{{ loop.index }}"
+                                           {% if specialty in selected_specialties %}checked{% endif %}>
+                                    <label class="form-check-label" for="specialty_{{ loop.index }}">
+                                        {{ specialty }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <p class="text-muted small mb-0">No specialties available. All salonists will be included.</p>
+                                {% endif %}
+                            </div>
+                            <div class="form-text">Select the specialties that should be included in this group. Leave blank to include all salonists.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Target Employment Types</label>
+                            <div class="border rounded p-3 bg-light">
+                                {% set selected_employment_types = group.get_target_employment_types() %}
+                                {% if employment_types %}
+                                {% for emp_type in employment_types %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="target_employment_types" 
+                                           value="{{ emp_type }}" id="emp_type_{{ loop.index }}"
+                                           {% if emp_type in selected_employment_types %}checked{% endif %}>
+                                    <label class="form-check-label" for="emp_type_{{ loop.index }}">
+                                        {{ emp_type }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <p class="text-muted small mb-0">No employment types available.</p>
+                                {% endif %}
+                            </div>
+                            <div class="form-text">Optional: Filter by employment type in addition to specialties.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Group Color</label>
+                            <select name="color" class="form-select">
+                                <option value="primary" {% if group.color == 'primary' %}selected{% endif %}>Primary (Blue)</option>
+                                <option value="success" {% if group.color == 'success' %}selected{% endif %}>Success (Green)</option>
+                                <option value="danger" {% if group.color == 'danger' %}selected{% endif %}>Danger (Red)</option>
+                                <option value="warning" {% if group.color == 'warning' %}selected{% endif %}>Warning (Yellow)</option>
+                                <option value="info" {% if group.color == 'info' %}selected{% endif %}>Info (Cyan)</option>
+                                <option value="secondary" {% if group.color == 'secondary' %}selected{% endif %}>Secondary (Gray)</option>
+                                <option value="dark" {% if group.color == 'dark' %}selected{% endif %}>Dark (Black)</option>
+                            </select>
+                            <div class="form-text">Choose a color for the group's appearance in the interface.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Group Icon</label>
+                            <select name="icon" class="form-select">
+                                <option value="bi-people" {% if group.icon == 'bi-people' %}selected{% endif %}>People (Default)</option>
+                                <option value="bi-scissors" {% if group.icon == 'bi-scissors' %}selected{% endif %}>Scissors</option>
+                                <option value="bi-razor" {% if group.icon == 'bi-razor' %}selected{% endif %}>Razor</option>
+                                <option value="bi-palette" {% if group.icon == 'bi-palette' %}selected{% endif %}>Palette</option>
+                                <option value="bi-hand-index" {% if group.icon == 'bi-hand-index' %}selected{% endif %}>Hand Index</option>
+                                <option value="bi-star" {% if group.icon == 'bi-star' %}selected{% endif %}>Star</option>
+                                <option value="bi-heart" {% if group.icon == 'bi-heart' %}selected{% endif %}>Heart</option>
+                                <option value="bi-gem" {% if group.icon == 'bi-gem' %}selected{% endif %}>Gem</option>
+                                <option value="bi-brush" {% if group.icon == 'bi-brush' %}selected{% endif %}>Brush</option>
+                                <option value="bi-shop" {% if group.icon == 'bi-shop' %}selected{% endif %}>Shop</option>
+                            </select>
+                            <div class="form-text">Choose an icon to represent this group.</div>
+                        </div>
+
+                        <!-- Preview Section -->
+                        <div class="col-12">
+                            <div class="border rounded p-3 bg-light">
+                                <h6 class="fw-bold mb-3">Preview</h6>
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-{{ group.color }} bg-opacity-10 p-2 me-3">
+                                        <i class="{{ group.icon }} text-{{ group.color }}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold" id="preview-name">{{ group.name }}</div>
+                                        <small class="text-muted" id="preview-description">{{ group.description or 'No description' }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                <div class="text-muted small">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Groups with no criteria will include all salonists in the salon.
+                                </div>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin.backbar_groups') }}" class="btn btn-outline-secondary">
+                                        Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle me-2"></i>Update Group
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="bi bi-info-circle me-2"></i>Group Statistics
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="fw-bold h4 text-primary mb-0">{{ group.deductions|length }}</div>
+                            <div class="small text-muted">Deductions</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-bold h4 text-success mb-0" id="worker-count">-</div>
+                            <div class="small text-muted">Workers</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-bold h4 text-info mb-0">{{ group.created_at.strftime('%Y-%m-%d') }}</div>
+                            <div class="small text-muted">Created</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Important Notes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <ul class="mb-0">
+                            <li>Changing criteria will affect future deductions only</li>
+                            <li>Existing deductions will remain with their original group</li>
+                            <li>Groups with deductions cannot be deleted</li>
+                            <li>Staff matching multiple groups may receive multiple deductions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update preview when form values change
+document.querySelector('input[name="name"]').addEventListener('input', function() {
+    document.getElementById('preview-name').textContent = this.value || 'Group Name';
+});
+
+document.querySelector('textarea[name="description"]').addEventListener('input', function() {
+    document.getElementById('preview-description').textContent = this.value || 'No description';
+});
+
+document.querySelector('select[name="color"]').addEventListener('change', function() {
+    const preview = document.querySelector('.rounded-circle');
+    const icon = preview.querySelector('i');
+    preview.className = `rounded-circle bg-${this.value} bg-opacity-10 p-2 me-3`;
+    icon.className = `${icon.className.replace(/text-\w+/, '')} text-${this.value}`;
+});
+
+document.querySelector('select[name="icon"]').addEventListener('change', function() {
+    document.querySelector('.rounded-circle i').className = `${this.value} text-${document.querySelector('select[name="color"]').value}`;
+});
+</script>
+{% endblock %}

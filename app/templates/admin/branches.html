@@ -1,0 +1,118 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_content %}
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-dark text-white py-3">
+        <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Branch Management</h5>
+    </div>
+    <div class="card-body p-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" class="row g-3 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label fw-bold small text-uppercase">New Branch Name</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Westlands" required>
+                <small class="text-muted">Enter a unique name for the new branch</small>
+            </div>
+            <div class="col-md-4 d-grid">
+                <button type="submit" class="btn btn-primary fw-bold">
+                    <i class="bi bi-plus-circle me-2"></i>Add Branch
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold">
+            <i class="bi bi-building me-2"></i>Configured Branches
+        </h6>
+        <span class="badge bg-dark">{{ branches|length }} Total</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="small text-uppercase text-muted bg-light">
+                <tr>
+                    <th class="ps-4">Branch Name</th>
+                    <th>Status</th>
+                    <th>Created Date</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in branches %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="fw-bold text-primary">{{ b.name }}</div>
+                        <small class="text-muted">ID: {{ b.id }}</small>
+                    </td>
+                    <td>
+                        {% if b.is_active %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>Active
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-pause-circle me-1"></i>Inactive
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted small">
+                        {{ b.created_at.strftime('%b %d, %Y') if b.created_at else 'N/A' }}
+                        <br>
+                        <span class="text-xs">{{ b.created_at.strftime('%H:%M') if b.created_at else '' }}</span>
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm" role="group">
+                            {% if b.is_active %}
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="action" value="deactivate">
+                                <input type="hidden" name="branch_id" value="{{ b.id }}">
+                                <button type="submit" class="btn btn-outline-warning" title="Deactivate Branch">
+                                    <i class="bi bi-pause"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="action" value="activate">
+                                <input type="hidden" name="branch_id" value="{{ b.id }}">
+                                <button type="submit" class="btn btn-outline-success" title="Activate Branch">
+                                    <i class="bi bi-play"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this branch? This action cannot be undone.');">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="branch_id" value="{{ b.id }}">
+                                <button type="submit" class="btn btn-outline-danger" title="Delete Branch">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-5">
+                        <i class="bi bi-building display-1 d-block mb-3"></i>
+                        <strong>No branches configured yet.</strong>
+                        <br>
+                        <small>Add your first branch using the form above.</small>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

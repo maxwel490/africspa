@@ -1,0 +1,642 @@
+{% extends "accountant/accountant_base.html" %}
+
+{% block accountant_content %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-12">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h4 class="mb-0 fw-bold text-dark"><i class="bi bi-scissors me-2 text-primary"></i>Multi-Service & Shop Entry</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ url_for('accountant.record_work') }}" method="POST" id="serviceForm">
+                        <div class="row g-3 mb-4">
+                            <h6 class="text-uppercase text-muted small fw-bold">Billing Context</h6>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold text-primary">Receipt Date</label>
+                                <input type="date" name="appointment_date" id="appointment_date" class="form-control" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">Receipt Number</label>
+                                <input type="text" name="receipt_no" id="receipt_no" class="form-control border-primary" placeholder="e.g. RCPT-1234" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-danger">Grand Total Paid</label>
+                                <input type="number" name="transacted_total" id="grandTotalDisplay" class="form-control border-danger" placeholder="0" required step="0.01">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold text-success">Payment Method</label>
+                                <input type="text" name="payment_method" id="paymentMethod" class="form-control border-success bg-light" readonly value="{{ prefill_data.payment_method or 'Service Order' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Client Name</label>
+                                <input type="text" name="client_name" id="clientName" class="form-control border-primary bg-light" readonly value="{{ prefill_data.client_name or 'Service Order Client' }}">
+                                <input type="hidden" name="client_id" id="clientId" value="new">
+                            </div>
+                        </div>
+
+                        <div class="border-top pt-4">
+                            <div id="serviceRowsContainer">
+                                {% if preselected_orders %}
+                                    {% for order in preselected_orders %}
+                                    <div class="card border mb-4 service-instance shadow-sm">
+                                        <div class="card-body bg-light p-3">
+                                            <div class="row g-2 mb-3 align-items-center">
+                                                <div class="col-md-3">
+                                                    <label class="form-label small fw-bold text-uppercase">Pricing Scene</label>
+                                                    <select class="form-select form-select-sm border-warning pricing-scene" disabled>
+                                                        <option value="Scene 2" {% if order.service and order.service.is_fixed_base %}selected{% endif %}>Scene 2: Fixed Base Price</option>
+                                                        <option value="Scene 1" {% if order.service and not order.service.is_fixed_base %}selected{% endif %}>Scene 1: Deductive</option>
+                                                    </select>
+                                                    <input type="hidden" name="pricing_scene[]" class="pricing-scene-hidden" value="{{ 'Scene 2' if order.service and order.service.is_fixed_base else 'Scene 1' }}">
+                                                    <small class="text-muted" style="font-size: 0.7rem;">Auto-selected from service template</small>
+                                                </div>
+                                                <div class="col-md-3 ext-cost-display" style="display:none;">
+                                                    <label class="form-label small fw-bold text-danger">Extension Cost</label>
+                                                    <input type="text" class="form-control form-control-sm total-ext-cost bg-white" readonly value="0.00">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label small fw-bold text-uppercase text-warning">Total Collected</label>
+                                                    <input type="number" name="price[]" class="form-control form-control-sm total-collected border-warning bg-white" oninput="calculateLogic(this)" required step="0.01" value="{{ order.total_price }}">
+                                                </div>
+                                            </div>
+                                            <div class="row g-2 align-items-end">
+                                                <div class="col-md-2">
+                                                    <label class="form-label small fw-bold text-primary">Front Salonist *</label>
+                                                    <select name="front_worker_id[]" class="form-select select2-basic" required>
+                                                        <option value="">Select...</option>
+                                                        {% for salonist in salonists %}
+                                                        <option value="{{ salonist.id }}">{{ salonist.full_name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label small fw-bold">Back Salonist</label>
+                                                    <select name="back_worker_id[]" class="form-select select2-basic">
+                                                        <option value="">N/A</option>
+                                                        {% for salonist in salonists %}
+                                                        <option value="{{ salonist.id }}">{{ salonist.full_name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label small fw-bold">Service Type *</label>
+                                                    <select name="service_type[]" class="form-select service-type-trigger" required>
+                                                        <option value="">Select...</option>
+                                                        {% for svc in services %}
+                                                        <option value="{{ svc.name }}" data-id="{{ svc.id }}" data-price="{{ svc.base_price }}" data-front="{{ svc.commission_front }}" data-back="{{ svc.commission_back }}" data-category="{{ svc.category }}" data-is-fixed-base="{{ 'true' if (svc.is_fixed_base if svc.is_fixed_base is not none else true) else 'false' }}" {% if order.service_id == svc.id %}selected{% endif %}>{{ svc.name }} ({{ svc.category }})</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label small fw-bold">Final Base Price</label>
+                                                    <input type="number" name="final_base_price[]" class="form-control bg-white" readonly required>
+                                                </div>
+                                                <div class="col-md-1">
+                                                    <label class="form-label tiny-label">Front</label>
+                                                    <input type="number" name="comm_front[]" class="form-control border-primary bg-white text-center" readonly required>
+                                                </div>
+                                                <div class="col-md-1">
+                                                    <label class="form-label tiny-label">Back</label>
+                                                    <input type="number" name="comm_back[]" class="form-control border-info bg-white text-center" readonly required>
+                                                </div>
+                                                <div class="col-md-1 text-end">
+                                                    <!-- Remove button hidden for preselected rows -->
+                                                </div>
+                                            </div>
+                                            <div class="product-nested-section mt-3 p-3 bg-white rounded border-start border-4 border-primary" style="display: none;">
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="small fw-bold">Extensions Used (Internal)</span>
+                                                    <button type="button" class="btn btn-link btn-sm p-0" onclick="addProductToInstance(this)">+ Add Item</button>
+                                                </div>
+                                                <div class="instance-product-rows"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            {% if not preselected_orders %}
+                                <button type="button" class="btn btn-sm btn-dark" id="addServiceBtn" onclick="addServiceRow()">+ Add Service</button>
+                            {% endif %}
+                        </div>
+
+                        <div class="border-top pt-4 mt-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="text-uppercase text-muted small fw-bold mb-0">Shop Purchases</h6>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addShopRow()">+ Add Shop Item</button>
+                            </div>
+                            <div id="shopPurchaseContainer" class="bg-light p-3 rounded border">
+                                <div class="text-center text-muted small py-2" id="emptyShopHint">
+                                    No shop items added.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-top pt-4 mt-4">
+                            <h6 class="text-uppercase text-muted small fw-bold mb-3">Client Tip</h6>
+                            <div class="bg-light p-3 rounded border">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-3 border-end">
+                                        <label class="form-label small fw-bold text-success">Total Tip Amount</label>
+                                        <input type="number" name="tip_amount" id="tipAmount" class="form-control border-success" placeholder="0" step="0.01" oninput="calculateTipSplit()">
+                                    </div>
+                                    <div class="col-md-9 ps-4">
+                                        <label class="form-label small fw-bold">Search Salonists to Tip:</label>
+                                        <select name="tip_recipient_ids[]" id="tipRecipientSelect" class="form-select select2-tip" multiple="multiple">
+                                            {% for s in salonists %}
+                                            <option value="{{ s.id }}">{{ s.full_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <div id="tipSplitHint" class="mt-2 small text-muted fst-italic" style="display:none;">
+                                            Each gets: <span id="perPersonAmount" class="fw-bold text-dark">0.00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end border-top pt-4 mt-4">
+                            <div id="validationErrors" class="alert alert-danger mb-3" style="display: none;"></div>
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm" id="saveEntryBtn">Save Entry</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="serviceRowTemplate">
+    <div class="card border mb-4 service-instance shadow-sm">
+        <div class="card-body bg-light p-3">
+            <div class="row g-2 mb-3 align-items-center">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-uppercase">Pricing Scene</label>
+                    <select class="form-select form-select-sm border-warning pricing-scene" disabled>
+                        <option value="Scene 2">Scene 2: Fixed Base Price</option>
+                        <option value="Scene 1">Scene 1: Deductive</option>
+                    </select>
+                    <input type="hidden" name="pricing_scene[]" class="pricing-scene-hidden" value="Scene 2">
+                    <small class="text-muted" style="font-size: 0.7rem;">Auto-selected from service template</small>
+                </div>
+                <div class="col-md-3 ext-cost-display" style="display:none;">
+                    <label class="form-label small fw-bold text-danger">Extension Cost</label>
+                    <input type="text" class="form-control form-control-sm total-ext-cost bg-white" readonly value="0.00">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-uppercase text-warning">Total Collected</label>
+                    <input type="number" name="price[]" class="form-control form-control-sm total-collected border-warning bg-white" oninput="calculateLogic(this)" required step="0.01">
+                </div>
+            </div>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-primary">Front Salonist *</label>
+                    <select name="front_worker_id[]" class="form-select select2-basic" required>
+                        <option value="">Select...</option>
+                        {% for s in salonists %}
+                        <option value="{{ s.id }}">{{ s.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Back Salonist</label>
+                    <select name="back_worker_id[]" class="form-select select2-basic">
+                        <option value="">N/A</option>
+                        {% for s in salonists %}
+                        <option value="{{ s.id }}">{{ s.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">Service Type *</label>
+                    <select name="service_type[]" class="form-select service-type-trigger" required>
+                        <option value="">Select...</option>
+                        {% for s in services %}
+                        <option value="{{ s.name }}" data-price="{{ s.base_price }}" data-front="{{ s.commission_front }}" data-back="{{ s.commission_back }}" data-category="{{ s.category }}" data-is-fixed-base="{{ 'true' if (s.is_fixed_base if s.is_fixed_base is not none else true) else 'false' }}"> {{ s.name }} ({{ s.category }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Final Base Price</label>
+                    <input type="number" name="final_base_price[]" class="form-control bg-white" readonly required>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label tiny-label">Front</label>
+                    <input type="number" name="comm_front[]" class="form-control border-primary bg-white text-center" readonly required>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label tiny-label">Back</label>
+                    <input type="number" name="comm_back[]" class="form-control border-info bg-white text-center" readonly required>
+                </div>
+                <div class="col-md-1 text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeServiceInstance(this)">×</button>
+                </div>
+            </div>
+            <div class="product-nested-section mt-3 p-3 bg-white rounded border-start border-4 border-primary" style="display: none;">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="small fw-bold">Extensions Used (Internal)</span>
+                    <button type="button" class="btn btn-link btn-sm p-0" onclick="addProductToInstance(this)">+ Add Item</button>
+                </div>
+                <div class="instance-product-rows"></div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="shopRowTemplate">
+    <div class="row g-2 mb-2 shop-row align-items-center bg-white p-2 rounded border mx-0 shadow-sm">
+        <div class="col-md-6">
+            <select name="shop_product_id[]" class="form-select form-select-sm shop-item-select" required>
+                <option value="">Select Shop Product...</option>
+                {% for p in products %}
+                    {% if p.category and p.category|lower == "shop" %}
+                    <option value="{{ p.id }}" data-price="{{ p.unit_price }}">{{ p.name }} (KSh {{ p.unit_price }})</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="shop_product_qty[]" class="form-control form-control-sm shop-qty" value="1" min="1" oninput="calculateGrandTotal()" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" class="form-control form-control-sm shop-subtotal bg-light" readonly value="0">
+        </div>
+        <div class="col-md-1 text-end">
+            <button type="button" class="btn btn-sm text-danger" onclick="removeShopRow(this)">×</button>
+        </div>
+    </div>
+</template>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+let serviceIndex = 0;
+
+$(document).ready(() => {
+    // Prefill data if coming from service order
+    {% if prefill_data %}
+        
+        
+        // Set client name from service order
+        
+        $('#clientName').val('{{ prefill_data.client_name }}');
+        .val());
+        
+        // Set receipt number from service order
+        
+        $('#receipt_no').val('{{ prefill_data.receipt_no or "SO-" + prefill_data.service_order_id|string }}');
+        
+        // Set appointment date to service order creation date
+        {% if prefill_data.created_at %}
+             }}');
+            $('#appointment_date').val('{{ prefill_data.created_at.strftime("%Y-%m-%d") }}');
+        {% else %}
+            
+            $('#appointment_date').val(new Date().toISOString().split('T')[0]);
+        {% endif %}
+        
+        // Set transacted total from service order
+        
+        $('#grandTotalDisplay').val({{ prefill_data.transacted_total or 0 }});
+        
+        // Payment method is already set from service order (readonly field)
+        
+        
+        // Add a service row to get started
+        addServiceRow();
+    {% else %}
+        
+    {% endif %}
+        
+        // Basic setup
+        $('.select2-tip').select2({ width: '100%', placeholder: "Search salonists..." });
+        
+        // Restore draft only if no prefill data (service order takes priority)
+        {% if not prefill_data %}
+            setTimeout(restoreFormDraft, 150);
+        {% endif %}
+        
+        // Save on any change
+        $(document).on('input change', '#serviceForm input, #serviceForm select', saveFormDraft);
+
+        // Clear on submit
+        $('#serviceForm').on('submit', () => {
+            localStorage.removeItem('salon_entry_draft');
+        });
+
+        // Form validation before submit
+        $('#serviceForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            const errors = [];
+            const validationDiv = $('#validationErrors');
+            
+            // Check all required fields
+            if (!$('#appointment_date').val()) {
+                errors.push('Receipt date is required');
+            }
+            if (!$('#receipt_no').val()) {
+                errors.push('Receipt number is required');
+            }
+            if (!$('#clientName').val()) {
+                errors.push('Client name is required');
+            }
+            if (!$('#paymentMethod').val()) {
+                errors.push('Payment method is required');
+            }
+            
+            // Check service rows
+            let hasServices = false;
+            $('.service-instance').each(function() {
+                const serviceType = $(this).find('.service-type-trigger').val();
+                const frontWorker = $(this).find('select[name="front_worker_id[]"]').val();
+                const price = $(this).find('.total-collected').val();
+                
+                if (serviceType && frontWorker && price) {
+                    hasServices = true;
+                } else if (serviceType || frontWorker || price) {
+                    errors.push('Please complete all service fields (service type, front salonist, and price)');
+                    return false; // break out of loop
+                }
+            });
+            
+            if (!hasServices) {
+                errors.push('At least one complete service entry is required');
+            }
+            
+            // Check shop rows if any exist
+            $('.shop-row').each(function() {
+                const product = $(this).find('select[name="shop_product_id[]"]').val();
+                const qty = $(this).find('input[name="shop_product_qty[]"]').val();
+                
+                if (product && !qty) {
+                    errors.push('Please specify quantity for all shop items');
+                    return false;
+                } else if (!product && qty) {
+                    errors.push('Please select a product for all shop item quantities');
+                    return false;
+                }
+            });
+            
+            // Check tip if amount is entered
+            const tipAmount = parseFloat($('#tipAmount').val()) || 0;
+            const tipRecipients = $('#tipRecipientSelect').val() || [];
+            if (tipAmount > 0 && tipRecipients.length === 0) {
+                errors.push('Please select at least one salonist to receive the tip');
+            } else if (tipAmount === 0 && tipRecipients.length > 0) {
+                errors.push('Please specify tip amount or remove tip recipients');
+            }
+            
+            // Check total matches service order amount
+            const serviceOrderTotal = {{ prefill_data.transacted_total or 0 }};
+            const calculatedTotal = parseFloat($('#grandTotalDisplay').val()) || 0;
+            
+            if (Math.abs(calculatedTotal - serviceOrderTotal) > 0.01) {
+                errors.push(`Total amount (${calculatedTotal.toFixed(2)}) must match service order amount (${serviceOrderTotal.toFixed(2)})`);
+            }
+            
+            // Display errors or submit form
+            if (errors.length > 0) {
+                validationDiv.html('<strong>Please fix the following issues:</strong><ul><li>' + errors.join('</li><li>') + '</li></ul>').show();
+                validationDiv[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                validationDiv.hide();
+                localStorage.removeItem('salon_entry_draft');
+                this.submit();
+            }
+        });
+
+        // Payment method is readonly from service order, no change handler needed
+    });
+
+function saveFormDraft() {
+    const data = {
+        main: {
+            date: $('#appointment_date').val(),
+            receipt: $('#receipt_no').val(),
+            grand: $('#grandTotalDisplay').val(),
+            pay: $('#paymentMethod').val(),
+            client: $('#clientName').val(),
+            tipAmt: $('#tipAmount').val(),
+            tipRec: $('#tipRecipientSelect').val()
+        },
+        services: [],
+        shop: []
+    };
+
+    $('.service-instance').each(function() {
+        const row = $(this);
+        const products = [];
+        row.find('.product-row').each(function() {
+            products.push({ id: $(this).find('select').val(), qty: $(this).find('input').val() });
+        });
+        data.services.push({
+            scene: row.find('.pricing-scene').val(),
+            price: row.find('.total-collected').val(),
+            front: row.find('select[name="front_worker_id[]"]').val(),
+            back: row.find('select[name="back_worker_id[]"]').val(),
+            type: row.find('.service-type-trigger').val(),
+            products: products
+        });
+    });
+
+    $('.shop-row').each(function() {
+        data.shop.push({ id: $(this).find('select').val(), qty: $(this).find('input').val() });
+    });
+
+    localStorage.setItem('salon_entry_draft', JSON.stringify(data));
+}
+
+function restoreFormDraft() {
+    const saved = localStorage.getItem('salon_entry_draft');
+    if (!saved) {
+        if ($('.service-instance').length === 0) addServiceRow();
+        return;
+    }
+
+    const data = JSON.parse(saved);
+    $('#appointment_date').val(data.main.date);
+    $('#receipt_no').val(data.main.receipt);
+    $('#grandTotalDisplay').val(data.main.grand);
+    $('#paymentMethod').val(data.main.pay).trigger('change');
+    $('#clientName').val(data.main.client);
+    $('#tipAmount').val(data.main.tipAmt);
+    $('#tipRecipientSelect').val(data.main.tipRec).trigger('change');
+
+    $('#serviceRowsContainer').empty();
+    data.services.forEach(s => {
+        addServiceRow();
+        const row = $('.service-instance').last();
+        row.find('.pricing-scene').val(s.scene);
+        row.find('.total-collected').val(s.price);
+        row.find('select[name="front_worker_id[]"]').val(s.front).trigger('change');
+        row.find('select[name="back_worker_id[]"]').val(s.back).trigger('change');
+        row.find('.service-type-trigger').val(s.type).trigger('change');
+        
+        s.products.forEach(p => {
+            addProductToInstance(row.find('button:contains("+ Add Item")')[0]);
+            const pRow = row.find('.product-row').last();
+            pRow.find('select').val(p.id).trigger('change');
+            pRow.find('input').val(p.qty);
+        });
+    });
+
+    $('#shopPurchaseContainer').find('.shop-row').remove();
+    data.shop.forEach(sh => {
+        addShopRow();
+        const row = $('.shop-row').last();
+        row.find('select').val(sh.id).trigger('change');
+        row.find('input').val(sh.qty);
+    });
+
+    calculateGrandTotal();
+}
+
+function addServiceRow() {
+    const container = document.getElementById('serviceRowsContainer');
+    const template = document.getElementById('serviceRowTemplate').content.cloneNode(true);
+    const newRow = document.createElement('div');
+    newRow.setAttribute('data-index', serviceIndex); 
+    newRow.appendChild(template);
+    container.appendChild(newRow);
+    $(newRow).find('.select2-basic').select2({ width: '100%' });
+    $(newRow).find('.service-type-trigger').select2({ width: '100%' }).on('change', function() { calculateLogic(this, true); });
+    serviceIndex++; 
+}
+
+function addShopRow() {
+    document.getElementById('emptyShopHint').style.display = 'none';
+    const container = document.getElementById('shopPurchaseContainer');
+    const template = document.getElementById('shopRowTemplate').content.cloneNode(true);
+    container.appendChild(template);
+    $(container).find('.shop-item-select').last().select2({ width: '100%' }).on('change', calculateGrandTotal);
+}
+
+function removeShopRow(btn) {
+    btn.closest('.shop-row').remove();
+    if ($('.shop-row').length === 0) document.getElementById('emptyShopHint').style.display = 'block';
+    calculateGrandTotal();
+}
+
+function removeServiceInstance(btn) {
+    if ($('.service-instance').length > 1) {
+        btn.closest('.service-instance').remove();
+        calculateGrandTotal();
+    }
+}
+
+function calculateTipSplit() {
+    const tipAmt = parseFloat($('#tipAmount').val()) || 0;
+    const count = ($('#tipRecipientSelect').val() || []).length;
+    if (tipAmt > 0 && count > 0) {
+        $('#perPersonAmount').text((tipAmt / count).toFixed(2));
+        $('#tipSplitHint').fadeIn();
+    } else {
+        $('#tipSplitHint').fadeOut();
+    }
+    calculateGrandTotal();
+}
+
+function calculateLogic(element, isServiceChange = false) {
+    const instanceCard = element.closest('.service-instance');
+    const pricingSceneSelect = $(instanceCard).find('.pricing-scene');
+    const pricingSceneHidden = $(instanceCard).find('.pricing-scene-hidden');
+    const select = $(instanceCard).find('.service-type-trigger')[0];
+    const opt = select.options[select.selectedIndex];
+    if (!opt || !opt.value) return;
+
+    if (isServiceChange) $(instanceCard).find('.total-collected').val($(opt).data('price'));
+    
+    const category = $(opt).data('category');
+    const isFixedBase = (($(opt).attr('data-is-fixed-base') || 'true') === 'true');
+    const serviceName = opt.value.toLowerCase();
+    const storedFront = parseFloat($(opt).data('front')) || 0;
+    const storedBack = parseFloat($(opt).data('back')) || 0;
+    const fixedPrice = parseFloat($(opt).data('price')) || 0;
+
+    if (category === "Hair") {
+        $(instanceCard).find('.product-nested-section').show();
+        $(instanceCard).find('.ext-cost-display').show();
+    } else {
+        $(instanceCard).find('.product-nested-section').hide();
+        $(instanceCard).find('.ext-cost-display').hide();
+    }
+
+    let extCost = 0;
+    $(instanceCard).find('.product-row').each(function() {
+        const pPrice = $(this).find('select option:selected').data('price') || 0;
+        extCost += pPrice * (parseFloat($(this).find('input').val()) || 0);
+    });
+    $(instanceCard).find('.total-ext-cost').val(extCost.toFixed(2));
+
+    const forcedScene = isFixedBase ? 'Scene 2' : 'Scene 1';
+    pricingSceneSelect.val(forcedScene);
+    pricingSceneHidden.val(forcedScene);
+
+    const collected = parseFloat($(instanceCard).find('.total-collected').val()) || 0;
+    const scene = pricingSceneHidden.val();
+    let base, comm_f, comm_b;
+
+    if (serviceName.includes("wash")) {
+        base = collected; comm_f = base * 0.35; comm_b = 0;
+    } else if (serviceName.includes("nail") || serviceName.includes("makeup")) {
+        base = collected; comm_f = base * 0.40; comm_b = 0;
+    } else if (category === "Hair") {
+        base = (scene === 'Scene 1') ? (collected - extCost) : fixedPrice;
+        const pool50 = base * 0.5;
+        comm_f = (storedFront > 0 && storedFront < 1.0) ? (base * storedFront) : storedFront;
+        comm_b = Math.max(0, pool50 - comm_f);
+    } else {
+        base = collected; comm_f = base * storedFront; comm_b = base * storedBack;
+    }
+
+    $(instanceCard).find('input[name="final_base_price[]"]').val(base.toFixed(2));
+    $(instanceCard).find('input[name="comm_front[]"]').val(comm_f.toFixed(2));
+    $(instanceCard).find('input[name="comm_back[]"]').val(comm_b.toFixed(2));
+
+    calculateGrandTotal();
+}
+
+function calculateGrandTotal() {
+    let total = 0;
+    $('.total-collected').each(function() { total += parseFloat($(this).val()) || 0; });
+    $('.shop-row').each(function() {
+        const p = $(this).find('select option:selected').data('price') || 0;
+        const q = parseFloat($(this).find('input').val()) || 0;
+        const sub = p * q;
+        $(this).find('.shop-subtotal').val(sub.toFixed(2));
+        total += sub;
+    });
+    total += parseFloat($('#tipAmount').val()) || 0;
+    $('#grandTotalDisplay').val(total.toFixed(2));
+}
+
+function addProductToInstance(btn) {
+    const instanceCard = btn.closest('.service-instance');
+    const idx = $(instanceCard).closest('div[data-index]').data('index');
+    const row = $(`
+        <div class="row g-2 mb-2 product-row">
+            <div class="col-8">
+                <select name="nested_product_id[${idx}][]" class="form-select form-select-sm product-select" required>
+                    <option value="">Select Extension...</option>
+                    {% for p in products %}{% if p.department in ["Hair", "Salon"] or p.category in ["Hair", "Extension", "Braid"] %}<option value="{{ p.id }}" data-price="{{ p.unit_price }}">{{ p.name }}</option>{% endif %}{% endfor %}
+                </select>
+            </div>
+            <div class="col-3"><input type="number" name="nested_product_qty[${idx}][]" class="form-control form-control-sm" value="1" oninput="calculateLogic(this)" required min="1"></div>
+            <div class="col-1 text-end"><button type="button" class="btn btn-sm text-danger" onclick="removeProductRow(this)">×</button></div>
+        </div>`);
+    $(instanceCard).find('.instance-product-rows').append(row);
+    row.find('select').select2({ width: '100%' }).on('change', () => calculateLogic(btn));
+}
+
+function removeProductRow(btn) {
+    const instance = btn.closest('.service-instance');
+    btn.closest('.product-row').remove();
+    calculateLogic(instance.querySelector('.pricing-scene'));
+}
+</script>
+{% endblock %}

@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Africa SPA System | Continental Salon Management Platform{% endblock %}
+{% block meta_description %}Africa SPA System is the leading continental salon management platform. Multi-tenant SaaS for barbershops, salons, and spas across Africa. $30 USD per branch with unlimited workers and clients.{% endblock %}
+{% block meta_keywords %}salon management Africa, SaaS platform, continental beauty, multi-tenant, barbershop software, spa management, Kenya, Nigeria, South Africa, Ghana, Egypt{% endblock %}
+{% block canonical_url %}https://africspa.com/{% endblock %}
+{% block og_description %}Africa SPA System - Empowering salons across the continent with advanced management technology, multi-currency support, and unlimited scaling.{% endblock %}
+
+{% block content %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "Organization",
+            "@id": "https://africspa.com/#org",
+            "name": "Africa SPA System",
+            "url": "https://africspa.com/",
+            "logo": "{{ url_for('static', filename='images/logo.jpg', _external=True) }}",
+            "description": "Leading continental salon management platform for African beauty businesses",
+            "sameAs": [
+                "https://instagram.com/africspa_system",
+                "https://www.linkedin.com/company/africspa-system"
+            ]
+        },
+        {
+            "@type": "SoftwareApplication",
+            "@id": "https://africspa.com/#platform",
+            "name": "Africa SPA System Platform",
+            "url": "https://africspa.com/",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web Browser",
+            "offers": {
+                "@type": "Offer",
+                "price": "30",
+                "priceCurrency": "USD",
+                "description": "$30 USD per branch per month"
+            },
+            "featureList": [
+                "Multi-tenant salon management",
+                "Unlimited workers and clients",
+                "Multi-currency support",
+                "Branch-level data sharing",
+                "Advanced analytics and reporting"
+            ]
+        }
+    ]
+}
+</script>
+
+<header class="position-relative mb-5 rounded-4 shadow-lg overflow-hidden" style="min-height: 600px;">
+    <div id="heroCarousel" class="carousel slide carousel-fade position-absolute w-100 h-100" data-bs-ride="carousel">
+        <div class="carousel-inner h-100">
+            <div class="carousel-item active h-100">
+                <div class="w-100 h-100" style="background: linear-gradient(rgba(44,62,80,0.6), rgba(52,73,94,0.4)), url('/static/images/africa-spa-hero.png') center/contain no-repeat;"></div>
+            </div>
+            <div class="carousel-item h-100">
+                <div class="w-100 h-100" style="background: linear-gradient(rgba(44,62,80,0.6), rgba(52,73,94,0.4)), url('/static/images/africa-spa-hero.png') center/contain no-repeat;"></div>
+            </div>
+            <div class="carousel-item h-100">
+                <div class="w-100 h-100" style="background: linear-gradient(rgba(44,62,80,0.6), rgba(52,73,94,0.4)), url('/static/images/africa-spa-hero.png') center/contain no-repeat;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container position-relative z-index-1 d-flex align-items-center" style="min-height: 600px;">
+        <div class="row w-100">
+            <div class="col-lg-8 text-start ps-lg-5 text-white">
+                <span class="badge bg-warning mb-3 px-3 py-2 rounded-pill text-uppercase fw-bold">Continental Scale</span>
+                <h1 class="display-2 fw-bold mb-3">Africa SPA System</h1>
+                <p class="lead mb-4 fs-4">Empowering salons across the continent with advanced management technology. Multi-tenant SaaS for barbershops, salons, and spas.</p>
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="/trial" class="btn btn-warning btn-lg px-5 rounded-pill fw-bold">Start Free Trial</a>
+                    <a href="/contact" class="btn btn-outline-light btn-lg px-5 rounded-pill fw-bold">Contact Us</a>
+                </div>
+                <div class="mt-4">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-warning me-2"></i>
+                                <span>$30 USD per branch</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-warning me-2"></i>
+                                <span>Unlimited workers & clients</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-warning me-2"></i>
+                                <span>Multi-currency support</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-warning me-2"></i>
+                                <span>Complete data isolation</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</header>
+
+<section class="py-5 mb-5 bg-white rounded-4 shadow-sm border-start border-warning border-5">
+    <div class="container p-4">
+        <div class="row align-items-center">
+            <div class="col-md-4 text-center">
+                <div class="p-3 bg-light rounded-circle d-inline-block">
+                    <i class="bi bi-shield-lock text-warning" style="font-size: 5rem;"></i>
+                </div>
+                <h4 class="mt-3 fw-bold">Multi-Tenant Security</h4>
+            </div>
+            <div class="col-md-8 border-start-md ps-md-5">
+                <h2 class="fw-bold mb-3">Enterprise-Grade Data Protection</h2>
+                <p class="text-muted fs-5 mb-0">Built with <strong>complete data isolation</strong> between tenants. Each salon operates as an independent business with secure data boundaries, ensuring complete privacy and compliance with African data regulations.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="features" class="py-5">
+    <div class="container">
+        <h2 class="fw-bold h1 text-center mb-5">Platform Features</h2>
+        
+        <div id="management" class="mb-5">
+            <h3 class="fw-bold border-bottom pb-2 mb-4"><i class="bi bi-gear-wide-connected me-2 text-warning"></i>Salon Management</h3>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card rounded-4 shadow-sm overflow-hidden bg-white">
+                        <div class="p-4 text-center">
+                            <i class="bi bi-people fs-1 text-primary mb-3"></i>
+                            <h5 class="fw-bold">Multi-Branch Operations</h5>
+                            <p class="text-muted">Manage multiple locations with shared client database and branch-specific operations.</p>
+                            <a href="/pricing" class="btn btn-sm btn-outline-primary rounded-pill">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card rounded-4 shadow-sm overflow-hidden bg-white">
+                        <div class="p-4 text-center">
+                            <i class="bi bi-calendar-check fs-1 text-success mb-3"></i>
+                            <h5 class="fw-bold">Appointment Booking</h5>
+                            <p class="text-muted">Advanced scheduling system with automated reminders and staff management.</p>
+                            <a href="/pricing" class="btn btn-sm btn-outline-success rounded-pill">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card rounded-4 shadow-sm overflow-hidden bg-white">
+                        <div class="p-4 text-center">
+                            <i class="bi bi-currency-exchange fs-1 text-warning mb-3"></i>
+                            <h5 class="fw-bold">Multi-Currency Support</h5>
+                            <p class="text-muted">Support for KES, NGN, ZAR, EGP, XAF, GHS, USD, EUR across all African regions.</p>
+                            <a href="/pricing" class="btn btn-sm btn-outline-warning rounded-pill">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="business-types" class="mb-5 bg-light p-4 rounded-4">
+            <h3 class="fw-bold border-bottom pb-2 mb-4"><i class="bi bi-shop me-2 text-warning"></i>Business Types Supported</h3>
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="text-center p-3">
+                        <i class="bi bi-scissors fs-1 text-primary mb-3"></i>
+                        <h5 class="fw-bold">Barbershops</h5>
+                        <p class="text-muted small">Haircuts, beard trims, hot towel shaves</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-3">
+                        <i class="bi bi-palette fs-1 text-success mb-3"></i>
+                        <h5 class="fw-bold">Beauty Salons</h5>
+                        <p class="text-muted small">Hair styling, coloring, treatments</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-3">
+                        <i class="bi bi-heart-pulse fs-1 text-warning mb-3"></i>
+                        <h5 class="fw-bold">Spas</h5>
+                        <p class="text-muted small">Massages, facials, wellness treatments</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-3">
+                        <i class="bi bi-people fs-1 text-info mb-3"></i>
+                        <h5 class="fw-bold">Unisex Salons</h5>
+                        <p class="text-muted small">Combined services for all clients</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="scaling" class="mb-5">
+            <h3 class="fw-bold border-bottom pb-2 mb-4"><i class="bi bi-graph-up me-2 text-warning"></i>Continental Scaling</h3>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="p-4 border rounded-4 bg-white shadow-sm d-flex align-items-center h-100">
+                        <i class="bi bi-infinity fs-1 text-success me-4"></i>
+                        <div>
+                            <h5 class="fw-bold mb-1">Unlimited Growth</h5>
+                            <p class="text-muted small mb-0">No limits on workers, clients, or appointments. Scale your business without constraints.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-4 border rounded-4 bg-white shadow-sm d-flex align-items-center h-100">
+                        <i class="bi bi-globe fs-1 text-primary me-4"></i>
+                        <div>
+                            <h5 class="fw-bold mb-1">African Coverage</h5>
+                            <p class="text-muted small mb-0">Support for all 54 African countries with localized pricing and currency support.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="impact" class="py-5 mb-5 bg-light rounded-4 px-4 text-center">
+    <div class="mb-5">
+        <h2 class="fw-bold display-6">Continental Impact</h2>
+        <p class="text-muted">Transforming the African beauty industry, one salon at a time</p>
+        <div class="mx-auto bg-warning" style="height: 3px; width: 60px;"></div>
+    </div>
+    <div class="row g-4 text-start">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100 rounded-4">
+                <div class="card-body p-4 text-center">
+                    <div class="mb-3 text-primary"><i class="bi bi-graph-up-arrow fs-1"></i></div>
+                    <h4 class="fw-bold">Economic Empowerment</h4>
+                    <p class="text-muted">Creating sustainable business opportunities for salon owners across Africa with affordable technology solutions.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100 rounded-4">
+                <div class="card-body p-4 text-center">
+                    <div class="mb-3 text-success"><i class="bi bi-award fs-1"></i></div>
+                    <h4 class="fw-bold">Professional Standards</h4>
+                    <p class="text-muted">Elevating service quality through digital tools and best practices for the continental beauty industry.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5 bg-gradient-primary text-white">
+    <div class="container text-center">
+        <h2 class="display-5 fw-bold mb-4">Join Africa's Leading Salon Platform</h2>
+        <p class="lead mb-4">Empowering beauty businesses across the continent</p>
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="/trial" class="btn btn-warning btn-lg">Start Free Trial</a>
+            <a href="/demo" class="btn btn-outline-light btn-lg">Watch Demo</a>
+            <a href="/pricing" class="btn btn-outline-light btn-lg">View Pricing</a>
+        </div>
+    </div>
+</section>
+                    <style>
+    /* Africa SPA System Branding */
+    .text-warning { color: #f39c12 !important; }
+    .bg-warning { background-color: #f39c12 !important; color: #000; }
+    .btn-warning { background-color: #f39c12; border-color: #f39c12; color: #000; }
+    .btn-warning:hover { background-color: #e67e22; color: #fff; }
+    .border-warning { border-color: #f39c12 !important; }
+    
+    .bg-gradient-primary { 
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); 
+        color: white;
+    }
+    
+    .z-index-1 { z-index: 1; }
+    .feature-card { transition: all 0.3s ease; }
+    .feature-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+
+    @media (min-width: 768px) {
+        .border-start-md { border-left: 1px solid #dee2e6 !important; }
+    }
+</style>
+{% endblock %}

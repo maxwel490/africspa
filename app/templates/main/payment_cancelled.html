@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Cancelled | Africa SPA System{% endblock %}
+{% block meta_description %}Payment was cancelled for Africa SPA System trial setup.{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center p-5">
+                        <div class="mb-4">
+                            <i class="bi bi-x-circle-fill text-warning" style="font-size: 4rem;"></i>
+                        </div>
+                        
+                        <h2 class="card-title mb-3">Payment Cancelled</h2>
+                        <p class="card-text text-muted mb-4">
+                            Your PayPal payment was cancelled. No charges were made to your account.
+                        </p>
+                        
+                        <div class="alert alert-warning">
+                            <h5 class="alert-heading">Payment Cancelled</h5>
+                            <p>The payment process was interrupted. You can try again whenever you're ready.</p>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('main.trial') }}" class="btn btn-primary">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Try Again
+                            </a>
+                            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-house me-2"></i>
+                                Back to Home
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Platform Gallery | Africa SPA System{% endblock %}
+{% block meta_description %}Explore Africa SPA System platform gallery: dashboard screenshots, mobile app interface, analytics reports, and continental salon management features in action.{% endblock %}
+{% block meta_keywords %}Africa SPA System gallery, platform screenshots, salon management interface, mobile app demo, analytics dashboard{% endblock %}
+{% block canonical_url %}https://africspa.com/gallery{% endblock %}
+{% block og_description %}View Africa SPA System platform interface and features through our comprehensive gallery of screenshots and demos.{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://africspa.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Gallery", "item": "https://africspa.com/gallery"}
+    ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold mb-2">Platform Gallery</h1>
+        <p class="text-muted">Explore our salon management platform interface and features.</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <img src="{{ url_for('static', filename='images/dashboard-screenshot.jpg') }}" alt="Africa SPA System Dashboard" class="w-100 rounded-4 shadow-sm" style="height: 290px; object-fit: cover;">
+            <div class="text-center mt-2">
+                <small class="text-muted">Main Dashboard</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <img src="{{ url_for('static', filename='images/analytics-screenshot.jpg') }}" alt="Analytics Dashboard" class="w-100 rounded-4 shadow-sm" style="height: 290px; object-fit: cover;">
+            <div class="text-center mt-2">
+                <small class="text-muted">Business Analytics</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <img src="{{ url_for('static', filename='images/mobile-app-screenshot.jpg') }}" alt="Mobile App Interface" class="w-100 rounded-4 shadow-sm" style="height: 290px; object-fit: cover;">
+            <div class="text-center mt-2">
+                <small class="text-muted">Mobile Application</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="/demo" class="btn btn-primary rounded-pill px-4">Watch Demo</a>
+        <a href="/contact" class="btn btn-primary rounded-pill px-4 ms-2">Schedule Live Demo</a>
+        <a href="/trial" class="btn btn-outline-primary rounded-pill px-4 ms-2">Start Free Trial</a>
+    </div>
+</section>
+{% endblock %}
+
+

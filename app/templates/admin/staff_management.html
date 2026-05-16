@@ -1,0 +1,342 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h4 class="fw-bold">
+            <i class="bi bi-people-fill me-2"></i>Staff Management
+        </h4>
+        <p class="text-muted small">Manage profiles, contact details, and system access for salaried personnel.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('admin.create_worker', branch=request.args.get('branch')) }}" class="btn btn-primary shadow-sm">
+            <i class="bi bi-person-plus-fill me-1"></i> Add New Staff
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <div class="input-group input-group-sm w-25 float-end">
+            <span class="input-group-text bg-light border-0"><i class="bi bi-search"></i></span>
+            <input type="text" id="staffSearch" class="form-control bg-light border-0" placeholder="Search by name or ID...">
+        </div>
+        <h6 class="mb-0 fw-bold text-uppercase small text-muted pt-1">Salaried Personnel</h6>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="staffTable">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Staff Member</th>
+                    <th>Contact Info</th>
+                    <th>Branch & Role</th>
+                    <th>Salary (KSh)</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for worker in staff %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm me-3 bg-dark text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                <span class="fw-bold">{{ worker.username[0] | upper if worker.username else worker.full_name[0] | upper }}</span>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark">{{ worker.full_name or worker.username }}</div>
+                                <code class="extra-small text-muted">ID: {{ worker.id_number or 'N/A' }}</code>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="small"><i class="bi bi-telephone me-1"></i>{{ worker.phone }}</div>
+                        <div class="small text-muted"><i class="bi bi-envelope me-1"></i>{{ worker.email }}</div>
+                    </td>
+                    <td>
+                        <div class="badge bg-primary-subtle text-primary mb-1">{{ worker.branch }}</div><br>
+                        <span class="badge rounded-pill {% if worker.role == 'manager' %}bg-success{% elif worker.role == 'accountant' %}bg-info{% else %}bg-secondary{% endif %}-subtle {% if worker.role == 'manager' %}text-success{% elif worker.role == 'accountant' %}text-info{% else %}text-secondary{% endif %} border">
+                            {{ worker.role | capitalize }}
+                        </span>
+                    </td>
+                    <td class="fw-bold">
+                        {{ "{:,.2f}".format(worker.base_salary) }}
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group shadow-sm">
+                            <button type="button" class="btn btn-sm btn-light border" data-bs-toggle="modal" data-bs-target="#editModal{{ worker.id }}">
+                                <i class="bi bi-pencil-square me-1"></i>Edit
+                            </button>
+                            <form action="{{ url_for('admin.staff_management', branch=request.args.get('branch')) }}" method="POST" onsubmit="return confirm('Permanently remove {{ worker.full_name }}?');" style="display:inline;">
+                                <input type="hidden" name="worker_id" value="{{ worker.id }}">
+                                <input type="hidden" name="action" value="delete">
+                                <button type="submit" class="btn btn-sm btn-outline-danger border">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+
+                <div class="modal fade" id="editModal{{ worker.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content border-0 shadow">
+                            <form action="{{ url_for('admin.staff_management', branch=request.args.get('branch')) }}" method="POST">
+                                <div class="modal-header bg-dark text-white">
+                                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Edit Staff: {{ worker.full_name }}</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <input type="hidden" name="action" value="edit_profile">
+                                    <input type="hidden" name="worker_id" value="{{ worker.id }}">
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-bold small text-uppercase">Full Names</label>
+                                            <input type="text" name="full_name" class="form-control" value="{{ worker.full_name }}" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-bold small text-uppercase">System Username</label>
+                                            <input type="text" name="username" id="editUsername" class="form-control" value="{{ worker.username }}" required>
+                                            <div id="usernameSuggestions" class="mt-2" style="display: none;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-bold small text-uppercase">National ID</label>
+                                            <input type="text" name="id_number" class="form-control" value="{{ worker.id_number }}" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-bold small text-uppercase">Phone Number</label>
+                                            <input type="tel" name="phone" class="form-control" value="{{ worker.phone }}" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-bold small text-uppercase">Email Address</label>
+                                            <input type="email" name="email" class="form-control" value="{{ worker.email }}" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-bold small text-uppercase">Assigned Branch</label>
+                                            <select name="branch_name" class="form-select border-primary">
+                                                {% for b in managed_branches %}
+                                                    <option value="{{ b }}" {% if worker.branch == b %}selected{% endif %}>{{ b }} Branch</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-bold small text-uppercase">Staff Role</label>
+                                            <select name="role" class="form-select border-primary">
+                                                <option value="manager" {% if worker.role == 'manager' %}selected{% endif %}>Manager</option>
+                                                <option value="accountant" {% if worker.role == 'accountant' %}selected{% endif %}>Accountant</option>
+                                                <option value="cleaner" {% if worker.role == 'cleaner' %}selected{% endif %}>Cleaner / Support</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small text-uppercase text-primary">Monthly Base Salary (KSh)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">KSh</span>
+                                            <input type="number" name="salary" class="form-control border-primary fw-bold" value="{{ worker.base_salary }}" step="0.01" required>
+                                        </div>
+                                    </div>
+                                       {% if worker.role == 'accountant' %}
+                                       <div class="row">
+                                           <div class="col-md-6 mb-3">
+                                               <label class="form-label fw-bold small text-uppercase">New Password</label>
+                                               <input type="password" name="new_password" id="staffPasswordInput" class="form-control" autocomplete="new-password">
+                                               <div class="mt-2" id="staffPasswordRequirements">
+                                                   <h6 class="text-muted small mb-2">Password Requirements:</h6>
+                                                   <div class="row g-2">
+                                                       <div class="col-12">
+                                                           <small class="requirement">
+                                                               <i class="fas fa-times-circle text-danger me-1"></i>
+                                                               At least <span>8</span> characters
+                                                           </small>
+                                                       </div>
+                                                       <div class="col-12">
+                                                           <small class="requirement">
+                                                               <i class="fas fa-times-circle text-danger me-1"></i>
+                                                               At least <span>1</span> uppercase letter
+                                                           </small>
+                                                       </div>
+                                                       <div class="col-12">
+                                                           <small class="requirement">
+                                                               <i class="fas fa-times-circle text-danger me-1"></i>
+                                                               At least <span>1</span> lowercase letter
+                                                           </small>
+                                                       </div>
+                                                       <div class="col-12">
+                                                           <small class="requirement">
+                                                               <i class="fas fa-times-circle text-danger me-1"></i>
+                                                               At least <span>1</span> digit
+                                                           </small>
+                                                       </div>
+                                                       <div class="col-12">
+                                                           <small class="requirement">
+                                                               <i class="fas fa-times-circle text-danger me-1"></i>
+                                                               At least <span>1</span> special character
+                                                           </small>
+                                                       </div>
+                                                       <div class="col-12">
+                                                           <small class="requirement">
+                                                               <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                                               Cannot contain your username as a major component (>50%)
+                                                           </small>
+                                                       </div>
+                                                       <div class="col-12">
+                                                           <small class="requirement">
+                                                               <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                                               Cannot be too common or easily guessable
+                                                           </small>
+                                                       </div>
+                                                   </div>
+                                               </div>
+                                           </div>
+                                           <div class="col-md-6 mb-3">
+                                               <label class="form-label fw-bold small text-uppercase">Confirm Password</label>
+                                               <input type="password" name="confirm_password" class="form-control" autocomplete="new-password">
+                                           </div>
+                                       </div>
+                                       {% endif %}
+                                </div>
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-dark px-4">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// Search function that works across multiple columns
+document.getElementById('staffSearch').addEventListener('keyup', function() {
+    let filter = this.value.toUpperCase();
+    let rows = document.querySelectorAll("#staffTable tbody tr");
+    rows.forEach(row => {
+        let text = row.innerText.toUpperCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+    });
+});
+
+// Password requirements checker for staff management
+document.getElementById('staffPasswordInput')?.addEventListener('input', function() {
+    const password = this.value;
+    updateStaffPasswordRequirements(password);
+});
+
+function updateStaffPasswordRequirements(password) {
+    const requirements = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        digits: /\d/.test(password),
+        special: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)
+    };
+    
+    // Update each requirement indicator
+    updateStaffRequirementIndicator('req-length', requirements.length);
+    updateStaffRequirementIndicator('req-uppercase', requirements.uppercase);
+    updateStaffRequirementIndicator('req-lowercase', requirements.lowercase);
+    updateStaffRequirementIndicator('req-digits', requirements.digits);
+    updateStaffRequirementIndicator('req-special', requirements.special);
+}
+
+function updateStaffRequirementIndicator(elementId, isMet) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const icon = element.querySelector('i');
+    const textElement = element.querySelector('span');
+    
+    if (isMet) {
+        // Turn green when requirement is met
+        icon.className = 'fas fa-check-circle text-success me-1';
+        element.classList.add('text-success');
+        element.classList.remove('text-muted');
+        if (textElement) {
+            textElement.classList.add('text-success');
+        }
+    } else {
+        // Red when not met
+        icon.className = 'fas fa-times-circle text-danger me-1';
+        element.classList.add('text-muted');
+        element.classList.remove('text-success');
+        if (textElement) {
+            textElement.classList.remove('text-success');
+        }
+    }
+}
+
+// Real-time username validation with Google-style suggestions for admin edit
+document.getElementById('editUsername')?.addEventListener('input', function() {
+    const username = this.value.trim();
+    const usernameField = this;
+    const suggestionsContainer = document.getElementById('usernameSuggestions');
+    const currentUsername = ''; // No current username in staff management list
+    
+    // Clear previous validation state
+    usernameField.classList.remove('is-invalid', 'is-valid');
+    suggestionsContainer.style.display = 'none';
+    suggestionsContainer.innerHTML = '';
+    
+    if (username.length >= 3 && username !== currentUsername) {
+        // Check username availability via AJAX
+        fetch(`/admin/check-username?username=${encodeURIComponent(username)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.available) {
+                    usernameField.classList.add('is-valid');
+                    usernameField.classList.remove('is-invalid');
+                } else {
+                    usernameField.classList.add('is-invalid');
+                    usernameField.classList.remove('is-valid');
+                    
+                    // Show Google-style suggestions if available
+                    if (data.suggestions && data.suggestions.length > 0) {
+                        suggestionsContainer.style.display = 'block';
+                        suggestionsContainer.innerHTML = `
+                            <div class="text-muted small mb-1">This username is taken. You can use:</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                ${data.suggestions.slice(0, 3).map(suggestion => `
+                                    <button type="button" class="btn btn-sm btn-outline-success username-suggestion" 
+                                            style="color: #198754; border-color: #198754; font-weight: 500;"
+                                            onclick="selectUsernameEdit('${suggestion}')">
+                                        ${suggestion}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                
+            });
+    }
+});
+
+// Function to select a suggested username for admin edit
+function selectUsernameEdit(username) {
+    const usernameField = document.getElementById('editUsername');
+    const suggestionsContainer = document.getElementById('usernameSuggestions');
+    
+    usernameField.value = username;
+    usernameField.classList.add('is-valid');
+    usernameField.classList.remove('is-invalid');
+    suggestionsContainer.style.display = 'none';
+    suggestionsContainer.innerHTML = '';
+}
+</script>
+{% endblock %}

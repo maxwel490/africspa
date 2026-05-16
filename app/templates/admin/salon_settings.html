@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+
+{% block title %}Salon Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-0">
+                <i class="bi bi-gear-fill me-2 text-primary"></i>Salon Settings
+            </h1>
+            <p class="text-muted mb-0">Configure your salon's business settings and features</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Internal Shop Settings -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-info text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shop me-2"></i>Internal Shop Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="action" value="toggle_internal_shop">
+                        
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" name="has_internal_shop" id="has_internal_shop" 
+                                   {% if salon.has_internal_shop %}checked{% endif %}>
+                            <label class="form-check-label fw-bold" for="has_internal_shop">
+                                Enable Internal Shop
+                            </label>
+                            <div class="form-text">
+                                Enable this option if the salon runs an internal product shop that sells items directly to customers.
+                                When enabled, shop-specific features will be available to accountants and staff.
+                            </div>
+                        </div>
+
+                        <div class="mb-4" id="shop_commission_section" {% if not salon.has_internal_shop %}style="display: none;"{% endif %}>
+                            <label class="form-label fw-bold">Shop Commission Rate (%)</label>
+                            <div class="input-group">
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="shopCommissionRate" 
+                                       name="shop_commission_rate"
+                                       min="0" 
+                                       max="100" 
+                                       step="0.1"
+                                       value="{{ salon.shop_commission_rate or 10.0 }}"
+                                       required>
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <div class="form-text">
+                                Commission rate applied to shop sales. Default is 10%.
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="bi bi-save me-2"></i>Update Shop Settings
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Service Rectification Settings -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-arrow-repeat me-2"></i>Service Rectification Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="action" value="toggle_service_rectification">
+                        
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" name="enable_service_rectification" id="enable_service_rectification" 
+                                   {% if salon.enable_service_rectification %}checked{% endif %}>
+                            <label class="form-check-label fw-bold" for="enable_service_rectification">
+                                Enable Service Rectification
+                            </label>
+                            <div class="form-text">
+                                Enable service rectification to handle customer complaints, service redos, and quality control.
+                                When enabled, accountants can process service rectifications with proper financial tracking.
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-save me-2"></i>Update Rectification Settings
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Backbar Settings -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam me-2"></i>Backbar Deductions Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="action" value="toggle_backbar">
+                        
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" name="has_backbar" id="has_backbar" 
+                                   {% if salon.has_backbar %}checked{% endif %}>
+                            <label class="form-check-label fw-bold" for="has_backbar">
+                                Enable Backbar Deductions
+                            </label>
+                            <div class="form-text">
+                                Enable backbar deductions to charge salonists for product usage during services.
+                                This helps manage inventory costs and ensures proper product accounting.
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="bi bi-save me-2"></i>Update Backbar Settings
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Backbar Groups Section -->
+                    {% if salon.has_backbar %}
+                    <hr class="my-4">
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="bi bi-people me-2"></i>Backbar Groups
+                        </h6>
+                        <a href="{{ url_for('admin.backbar_groups') }}" class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-plus-circle me-1"></i>Manage Groups
+                        </a>
+                    </div>
+
+                    {% if backbar_groups %}
+                    <div class="row">
+                        {% for group in target_groups %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-warning">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="badge bg-{{ group.color }} me-2">
+                                            <i class="{{ group.icon }} me-1"></i>{{ group.name }}
+                                        </div>
+                                        <small class="text-muted">{{ group.workers|length }} workers</small>
+                                    </div>
+                                    <p class="small text-muted mb-2">{{ group.description }}</p>
+                                    <div class="small">
+                                        <strong>Specialties:</strong> 
+                                        {% if group.specialties %}
+                                            {{ group.specialties|join(', ') }}
+                                        {% else %}
+                                            <span class="text-muted">All</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info border-0">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <div>
+                                <strong>No backbar groups configured</strong>
+                                <p class="small mb-0 mt-1">
+                                    Create backbar groups to organize how deductions are applied to different teams 
+                                    (e.g., "Cornrows & Braids", "Nails & Makeup", etc.).
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <a href="{{ url_for('admin.backbar_groups') }}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-plus-circle me-1"></i>Create First Group
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Payment Settings -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-credit-card me-2"></i>Payment Method Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="paymentSettingsForm">
+                        <input type="hidden" name="action" value="save_payment_config">
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Payment Configuration:</strong> Select which payment methods are available for your salon. 
+                            You can customize the display names and choose a default payment method.
+                        </div>
+
+                        <div class="table-responsive mb-4">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="40">Enable</th>
+                                        <th>Payment Method</th>
+                                        <th>Display Name</th>
+                                        <th>Icon</th>
+                                        <th width="120">Default</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for method in all_methods %}
+                                    <tr>
+                                        <td>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="enable_{{ method.code }}" 
+                                                       id="enable_{{ method.code }}"
+                                                       {{ 'checked' if method.code in enabled_codes }}>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <label for="enable_{{ method.code }}" class="form-check-label mb-0">
+                                                <i class="{{ method.icon }} me-2"></i>
+                                                {{ method.name }}
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" 
+                                                   name="name_{{ method.code }}" 
+                                                   value="{{ method.name }}"
+                                                   placeholder="Display name">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" 
+                                                   name="icon_{{ method.code }}" 
+                                                   value="{{ method.icon }}"
+                                                   placeholder="Font Awesome icon">
+                                        </td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" 
+                                                       name="default_method" 
+                                                       value="{{ method.code }}"
+                                                       id="default_{{ method.code }}"
+                                                       {{ 'checked' if method.code in enabled_codes and (payment_options|selectattr('code', 'equalto', method.code)|selectattr('is_default')|list|length > 0) }}>
+                                                <label class="form-check-label" for="default_{{ method.code }}">
+                                                    Default
+                                                </label>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-save me-2"></i>Save Payment Settings
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Current Status -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Current Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-shop fs-4 me-3 {% if salon.has_internal_shop %}text-success{% else %}text-muted{% endif %}"></i>
+                                <div>
+                                    <h6 class="mb-0">Internal Shop</h6>
+                                    <span class="badge {% if salon.has_internal_shop %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {% if salon.has_internal_shop %}Enabled{% else %}Disabled{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-box-seam fs-4 me-3 {% if salon.has_backbar %}text-warning{% else %}text-muted{% endif %}"></i>
+                                <div>
+                                    <h6 class="mb-0">Backbar Deductions</h6>
+                                    <span class="badge {% if salon.has_backbar %}bg-warning{% else %}bg-secondary{% endif %}">
+                                        {% if salon.has_backbar %}Enabled{% else %}Disabled{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% if salon.has_internal_shop %}
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-percent fs-4 me-3 text-primary"></i>
+                                <div>
+                                    <h6 class="mb-0">Commission Rate</h6>
+                                    <span class="badge bg-primary">{{ salon.shop_commission_rate or 10.0 }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="fw-bold text-primary mb-2">Payment Methods</h6>
+                            <div class="small">
+                                {% if payment_options %}
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for option in payment_options %}
+                                        <span class="badge bg-light text-dark">
+                                            <i class="{{ option.icon }} me-1"></i>
+                                            {{ option.name }}
+                                            {% if option.is_default %}<span class="badge bg-primary ms-1">Default</span>{% endif %}
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted mb-0">Using default payment configuration</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Profile Settings -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-info text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-circle me-2"></i>Profile Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="avatar-circle bg-primary text-white d-inline-flex align-items-center justify-content-center rounded-circle mb-2" style="width: 60px; height: 60px; font-size: 24px;">
+                            {{ current_user.username[0]|upper }}
+                        </div>
+                        <h6 class="mb-1">{{ current_user.full_name or current_user.username }}</h6>
+                        <span class="badge bg-info">{{ current_user.role|title }}</span>
+                    </div>
+
+                    <div class="small text-muted">
+                        <div class="mb-2">
+                            <strong>Username:</strong> {{ current_user.username }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Email:</strong> {{ current_user.email or 'Not set' }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Phone:</strong> {{ current_user.phone or 'Not set' }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Branch:</strong> {{ current_user.branch or 'All Branches' }}
+                        </div>
+                    </div>
+
+                    <a href="{{ url_for('admin.edit_profile') }}" class="btn btn-outline-primary btn-sm w-100 mt-3">
+                        <i class="bi bi-pencil me-2"></i>Edit Profile
+                    </a>
+                </div>
+            </div>
+
+            <!-- Help Card -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-question-circle me-2"></i>Help & Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="fw-bold text-primary">About Internal Shop</h6>
+                    <p class="small text-muted mb-3">
+                        The internal shop feature allows your salon to operate a retail shop within the same system, 
+                        keeping shop inventory and sales separate from salon operations.
+                    </p>
+
+                    <h6 class="fw-bold text-primary">About Backbar Deductions</h6>
+                    <p class="small text-muted mb-3">
+                        Backbar deductions automatically charge salonists for products used during services, 
+                        helping maintain accurate inventory and cost management.
+                    </p>
+                    <p class="small text-muted mb-3">
+                        <strong>Backbar Groups</strong> organize deductions by team specialties (e.g., "Cornrows & Braids", 
+                        "Nails & Makeup"). Each group can have different deduction rules and target specific workers.
+                    </p>
+
+                    <h6 class="fw-bold text-primary">About Payment Methods</h6>
+                    <p class="small text-muted mb-0">
+                        Configure which payment methods are accepted at your salon. These options will appear 
+                        in service order forms for accountants to use when processing payments.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.badge {
+    font-size: 0.8em;
+}
+
+.avatar-circle {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    // Toggle shop commission section based on internal shop checkbox
+    $('#has_internal_shop').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#shop_commission_section').show();
+        } else {
+            $('#shop_commission_section').hide();
+        }
+    });
+
+    // Payment settings form validation
+    $('#paymentSettingsForm').on('submit', function(e) {
+        var enabledCount = $('input[type="checkbox"][name^="enable_"]:checked').length;
+        
+        if (enabledCount === 0) {
+            e.preventDefault();
+            alert('Please enable at least one payment method.');
+            return false;
+        }
+        
+        // Ensure a default method is selected among enabled methods
+        var enabledDefault = false;
+        $('input[type="checkbox"][name^="enable_"]:checked').each(function() {
+            var methodCode = $(this).attr('name').replace('enable_', '');
+            if ($('#default_' + methodCode).is(':checked')) {
+                enabledDefault = true;
+                return false;
+            }
+        });
+        
+        if (!enabledDefault) {
+            e.preventDefault();
+            alert('Please select a default payment method among the enabled options.');
+            return false;
+        }
+    });
+    
+    // Auto-select default when enabling a method if no default is set
+    $('input[type="checkbox"][name^="enable_"]').on('change', function() {
+        if ($(this).is(':checked')) {
+            var methodCode = $(this).attr('name').replace('enable_', '');
+            var hasDefault = $('input[type="radio"][name="default_method"]:checked').length > 0;
+            
+            if (!hasDefault) {
+                $('#default_' + methodCode).prop('checked', true);
+            }
+        } else {
+            // If disabling the current default, clear the default selection
+            var methodCode = $(this).attr('name').replace('enable_', '');
+            if ($('#default_' + methodCode).is(':checked')) {
+                $('#default_' + methodCode).prop('checked', false);
+            }
+        }
+    });
+    
+    // Only allow default selection for enabled methods
+    $('input[type="radio"][name="default_method"]').on('change', function() {
+        var methodCode = $(this).val();
+        if (!$('#enable_' + methodCode).is(':checked')) {
+            $(this).prop('checked', false);
+            alert('Please enable this payment method before setting it as default.');
+        }
+    });
+});
+</script>
+{% endblock %}

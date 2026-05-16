@@ -1,0 +1,343 @@
+{% extends "superadmin/superadmin_base.html" %}
+
+{% block title %}Pricing Management - Africa SPA System{% endblock %}
+
+{% block extra_css %}
+<style>
+.pricing-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.pricing-card:hover {
+    transform: translateY(-5px);
+}
+
+.region-badge {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+}
+
+.price-display {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.change-indicator {
+    font-size: 0.75rem;
+    color: #dc3545;
+    font-weight: normal;
+}
+
+.history-item {
+    border-left: 3px solid #007bff;
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 mb-0">
+                <i class="fas fa-dollar-sign me-2"></i>Pricing Management
+            </h2>
+            <p class="text-muted mb-0">Manage subscription pricing across all African markets</p>
+        </div>
+        <div>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#editPricingModal">
+                <i class="fas fa-edit me-2"></i>Edit Pricing
+            </button>
+        </div>
+    </div>
+
+    <!-- Current Pricing Configuration -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card pricing-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-globe me-2"></i>Standard Pricing
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="price-display">
+                            ${{ "%.2f"|format(pricing_config.price_per_branch_usd) }}
+                            <span class="change-indicator">per branch/month</span>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-2">
+                                <small class="text-muted">Currency</small>
+                                <div class="fw-bold">{{ pricing_config.currency }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-2">
+                                <small class="text-muted">Last Updated</small>
+                                <div class="fw-bold">{{ pricing_config.updated_at.strftime('%Y-%m-%d') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card pricing-card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-building me-2"></i>Enterprise Pricing
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="price-display">
+                            ${{ "%.2f"|format(pricing_config.enterprise_price_per_branch_usd) }}
+                            <span class="change-indicator">per branch/month</span>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-2">
+                                <small class="text-muted">Min Branches</small>
+                                <div class="fw-bold">{{ pricing_config.enterprise_min_branches }}+</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-2">
+                                <small class="text-muted">Discount</small>
+                                <div class="fw-bold text-success">
+                                    {{ "%.1f"|format((1 - pricing_config.enterprise_price_per_branch_usd / pricing_config.price_per_branch_usd) * 100) }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Regional Multipliers -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-map-marked-alt me-2"></i>Regional Pricing Multipliers
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-2 col-sm-4 col-6 mb-3">
+                    <div class="text-center">
+                        <span class="badge region-badge bg-primary">🇰🇪 East Africa</span>
+                        <div class="mt-2">
+                            <strong>KES {{ "%.1f"|format(pricing_config.east_africa_multiplier) }}</strong>
+                            <br><small class="text-muted">per $1 USD</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-sm-4 col-6 mb-3">
+                    <div class="text-center">
+                        <span class="badge region-badge bg-success">🇳🇬 West Africa</span>
+                        <div class="mt-2">
+                            <strong>NGN {{ "%.1f"|format(pricing_config.west_africa_multiplier) }}</strong>
+                            <br><small class="text-muted">per $1 USD</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-sm-4 col-6 mb-3">
+                    <div class="text-center">
+                        <span class="badge region-badge bg-warning">🇿🇦 Southern Africa</span>
+                        <div class="mt-2">
+                            <strong>ZAR {{ "%.2f"|format(pricing_config.southern_africa_multiplier) }}</strong>
+                            <br><small class="text-muted">per $1 USD</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-sm-4 col-6 mb-3">
+                    <div class="text-center">
+                        <span class="badge region-badge bg-danger">🇪🇬 North Africa</span>
+                        <div class="mt-2">
+                            <strong>EGP {{ "%.1f"|format(pricing_config.north_africa_multiplier) }}</strong>
+                            <br><small class="text-muted">per $1 USD</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-sm-4 col-6 mb-3">
+                    <div class="text-center">
+                        <span class="badge region-badge bg-secondary">🇨🇲 Central Africa</span>
+                        <div class="mt-2">
+                            <strong>XAF {{ "%.1f"|format(pricing_config.central_africa_multiplier) }}</strong>
+                            <br><small class="text-muted">per $1 USD</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing History -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-history me-2"></i>Pricing Change History
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if pricing_history %}
+                {% for change in pricing_history %}
+                <div class="history-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">Pricing Update</h6>
+                            <p class="mb-1">
+                                Standard: ${{ "%.2f"|format(change.old_price_per_branch or 0) }} → 
+                                ${{ "%.2f"|format(change.new_price_per_branch) }}
+                                {% if change.old_enterprise_price or change.new_enterprise_price %}
+                                | Enterprise: ${{ "%.2f"|format(change.old_enterprise_price or 0) }} → 
+                                ${{ "%.2f"|format(change.new_enterprise_price) }}
+                                {% endif %}
+                            </p>
+                            {% if change.change_reason %}
+                            <p class="text-muted mb-0"><em>{{ change.change_reason }}</em></p>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">{{ change.changed_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No pricing changes recorded yet
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Edit Pricing Modal -->
+<div class="modal fade" id="editPricingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Edit Pricing Configuration
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('superadmin_pricing.update_pricing') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Standard Pricing</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Price per Branch (USD)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" name="price_per_branch_usd" 
+                                           class="form-control" step="0.01" min="0.01"
+                                           value="{{ pricing_config.price_per_branch_usd }}" required>
+                                    <span class="input-group-text">/month</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-warning mb-3">Enterprise Pricing</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Enterprise Price per Branch (USD)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" name="enterprise_price_per_branch_usd" 
+                                           class="form-control" step="0.01" min="0.01"
+                                           value="{{ pricing_config.enterprise_price_per_branch_usd }}" required>
+                                    <span class="input-group-text">/month</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Minimum Branches for Enterprise</label>
+                                <input type="number" name="enterprise_min_branches" 
+                                       class="form-control" min="1"
+                                       value="{{ pricing_config.enterprise_min_branches }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6 class="text-info mb-3">Regional Multipliers</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">🇰🇪 East Africa (KES per $1)</label>
+                                <input type="number" name="east_africa_multiplier" 
+                                       class="form-control" step="0.1" min="0.1"
+                                       value="{{ pricing_config.east_africa_multiplier }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">🇳🇬 West Africa (NGN per $1)</label>
+                                <input type="number" name="west_africa_multiplier" 
+                                       class="form-control" step="0.1" min="0.1"
+                                       value="{{ pricing_config.west_africa_multiplier }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">🇿🇦 Southern Africa (ZAR per $1)</label>
+                                <input type="number" name="southern_africa_multiplier" 
+                                       class="form-control" step="0.01" min="0.01"
+                                       value="{{ pricing_config.southern_africa_multiplier }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">🇪🇬 North Africa (EGP per $1)</label>
+                                <input type="number" name="north_africa_multiplier" 
+                                       class="form-control" step="0.1" min="0.1"
+                                       value="{{ pricing_config.north_africa_multiplier }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">🇨🇲 Central Africa (XAF per $1)</label>
+                                <input type="number" name="central_africa_multiplier" 
+                                       class="form-control" step="0.1" min="0.1"
+                                       value="{{ pricing_config.central_africa_multiplier }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Change Reason</label>
+                        <textarea name="change_reason" class="form-control" rows="3" 
+                                  placeholder="Explain why you're changing the pricing..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Update Pricing
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

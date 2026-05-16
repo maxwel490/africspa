@@ -1,0 +1,631 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Billing - Africa SPA System{% endblock %}
+
+{% block extra_css %}
+<style>
+.billing-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+}
+
+.subscription-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.subscription-card:hover {
+    transform: translateY(-5px);
+}
+
+.status-active {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.status-expired {
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+    color: white;
+}
+
+.google-pay-button {
+    min-height: 48px;
+    border-radius: 8px;
+}
+
+.billing-history-table {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.billing-history-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.price-display {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.currency-symbol {
+    font-size: 1.5rem;
+    opacity: 0.8;
+}
+
+.branch-count {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Billing Header -->
+<div class="billing-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 fw-bold mb-3">Tenant Subscription Billing</h1>
+                <p class="lead mb-0">Manage your salon tenant subscription with Google Pay</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="d-flex align-items-center justify-content-end">
+                    <i class="fas fa-credit-card fa-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-5">
+    <div class="row">
+        <!-- Current Subscription -->
+        <div class="col-lg-8">
+            <div class="card subscription-card mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                            <h3 class="card-title fw-bold">Current Subscription</h3>
+                            <p class="text-muted mb-0">Africa SPA System - ${{ "%.2f"|format(subscription.subscription_details.price_per_branch) }} per branch per month</p>
+                        </div>
+                        <div class="text-end">
+                            {% if subscription.is_active %}
+                                <span class="badge status-active px-3 py-2">
+                                    <i class="fas fa-check-circle me-2"></i>Active
+                                </span>
+                            {% else %}
+                                <span class="badge status-expired px-3 py-2">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Expired
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="text-muted small">Monthly Cost</label>
+                                <div class="price-display">
+                                    <span class="currency-symbol">$</span>{{ "%.2f"|format(subscription.subscription_details.monthly_cost) }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="text-muted small">Active Branches</label>
+                                <div class="d-flex align-items-center">
+                                    <span class="h3 mb-0 me-2">{{ subscription.subscription_details.active_branches }}</span>
+                                    <span class="branch-count">branches</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="text-muted small">Last Payment</label>
+                                <div class="fw-semibold">
+                                    {% if subscription.last_payment_date %}
+                                        {{ subscription.last_payment_date }}
+                                    {% else %}
+                                        No payments yet
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="text-muted small">Next Billing Date</label>
+                                <div class="fw-semibold">
+                                    {% if subscription.next_billing_date %}
+                                        {{ subscription.next_billing_date }}
+                                        {% if subscription.days_until_billing is not none %}
+                                            <span class="text-muted small">({{ subscription.days_until_billing }} days)</span>
+                                        {% endif %}
+                                    {% else %}
+                                        Not scheduled
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Billing Status -->
+                    {% if subscription.subscription_details.active_branches == 0 %}
+                    <div class="alert alert-warning mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>No Branches Yet</strong><br>
+                        {{ subscription.subscription_details.message }}
+                    </div>
+                    
+                    <div class="text-center">
+                        <h5 class="mb-3">Create Your First Branch</h5>
+                        <p class="text-muted mb-3">
+                            Billing will start when you create your first branch at $30 USD per branch per month.
+                        </p>
+                        <a href="{{ url_for('admin.manage_branches') }}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Create First Branch
+                        </a>
+                    </div>
+                    
+                    {% elif subscription.status == 'grace_period' %}
+                    <div class="alert alert-warning mb-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Grace Period Active</strong><br>
+                        Your subscription is in grace period. You have {{ subscription.days_in_grace }} days remaining to renew.
+                        <br><small class="text-muted">
+                            After grace period: Salonists will be locked out, Accountants will have limited access
+                        </small>
+                    </div>
+                    
+                    <div class="text-center">
+                        <h5 class="mb-3">Renew Subscription Now</h5>
+                        <p class="text-muted mb-3">
+                            Avoid service interruption by renewing before grace period ends.
+                        </p>
+                        <div id="google-pay-button-container" class="d-inline-block"></div>
+                        <p class="text-muted small mt-3">
+                            <i class="fas fa-lock me-1"></i>
+                            Secure payment powered by Google Pay
+                        </p>
+                    </div>
+                    
+                    {% elif subscription.status == 'overdue' %}
+                    <div class="alert alert-danger mb-4">
+                        <i class="fas fa-times-circle me-2"></i>
+                        <strong>Subscription Overdue</strong><br>
+                        Your subscription is overdue by {{ subscription.days_overdue }} days.
+                        <br><small class="text-muted">
+                            Access restricted: Salonists locked out, Accountants limited to payments only
+                        </small>
+                    </div>
+                    
+                    <div class="text-center">
+                        <h5 class="mb-3">Immediate Payment Required</h5>
+                        <p class="text-muted mb-3">
+                            Reactivate your subscription to restore full access.
+                        </p>
+                        <div id="google-pay-button-container" class="d-inline-block"></div>
+                        <p class="text-muted small mt-3">
+                            <i class="fas fa-lock me-1"></i>
+                            Secure payment powered by Google Pay
+                        </p>
+                    </div>
+                    
+                    {% elif not subscription.is_active or (subscription.days_until_billing is not none and subscription.days_until_billing < 7) %}
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {% if not subscription.is_active %}
+                            Your subscription has expired. Please renew to continue using the platform.
+                        {% else %}
+                            Your subscription will expire soon. Renew now to avoid interruption.
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-center">
+                        <h5 class="mb-3">Pay with Google Pay</h5>
+                        <div id="google-pay-button-container" class="d-inline-block"></div>
+                        <p class="text-muted small mt-3">
+                            <i class="fas fa-lock me-1"></i>
+                            Secure payment powered by Google Pay
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Billing History -->
+            <div class="card subscription-card">
+                <div class="card-body p-4">
+                    <h4 class="card-title fw-bold mb-4">Billing History</h4>
+                    
+                    {% if billing_history %}
+                    <div class="table-responsive">
+                        <table class="table billing-history-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Transaction ID</th>
+                                    <th>Branches</th>
+                                    <th class="text-end">Amount</th>
+                                    <th>Status</th>
+                                    <th>Method</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in billing_history %}
+                                <tr>
+                                    <td>{{ record.date }}</td>
+                                    <td><code>{{ record.transaction_id }}</code></td>
+                                    <td>{{ record.branches }}</td>
+                                    <td class="text-end fw-semibold">${{ "%.2f"|format(record.amount) }}</td>
+                                    <td>
+                                        <span class="badge bg-success">{{ record.status }}</span>
+                                    </td>
+                                    <td>{{ record.payment_method }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No billing history</h5>
+                        <p class="text-muted">Your payment history will appear here after making payments.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Subscription Info -->
+            <div class="card subscription-card mb-4">
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-bold mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Subscription Details
+                    </h5>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Price per branch:</span>
+                            <span class="fw-semibold">${{ "%.2f"|format(subscription.subscription_details.price_per_branch) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Active branches:</span>
+                            <span class="fw-semibold">
+                                {{ subscription.subscription_details.active_branches }}
+                                {% if subscription.subscription_details.active_branches == 0 %}
+                                <span class="badge bg-warning ms-2">No billing yet</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Country:</span>
+                            <span class="fw-semibold">
+                                {% set country_flags = {'KE': '🇰🇪', 'NG': '🇳🇬', 'ZA': '🇿🇦', 'EG': '🇪🇬', 'GH': '🇬🇭', 'CM': '🇨🇲', 'CI': '🇨🇮', 'TZ': '🇹🇿', 'UG': '🇺🇬', 'US': '🇺🇸'} %}
+                                {{ country_flags.get(subscription.subscription_details.country, '🌍') }} {{ subscription.subscription_details.country|default('KE') }}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Billing cycle:</span>
+                            <span class="fw-semibold">Monthly</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Currency:</span>
+                            <span class="fw-semibold">USD</span>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-light">
+                        <small class="text-muted">
+                            <i class="fas fa-globe-africa me-1"></i>
+                            Continental pricing applies across all African markets
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="card subscription-card mb-4">
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-bold mb-3">
+                        <i class="fas fa-credit-card me-2"></i>Payment Methods
+                    </h5>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fab fa-google fa-lg me-3 text-primary"></i>
+                            <div>
+                                <div class="fw-semibold">Google Pay</div>
+                                <small class="text-muted">Fast, secure payments</small>
+                            </div>
+                        </div>
+                        {% if subscription.payment_method == 'google_pay' %}
+                        <span class="badge bg-success ms-4">Current method</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-muted small">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        All payments are secure and encrypted
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support -->
+            <div class="card subscription-card">
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-bold mb-3">
+                        <i class="fas fa-headset me-2"></i>Need Help?
+                    </h5>
+                    
+                    <p class="text-muted mb-3">
+                        If you have questions about your subscription or payments, our support team is here to help.
+                    </p>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="fas fa-envelope me-2"></i>Contact Support
+                        </a>
+                        <a href="#" class="btn btn-outline-secondary">
+                            <i class="fas fa-book me-2"></i>View Documentation
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Google Pay Script -->
+<script async src="https://pay.google.com/gp/p/js/paymentpackages.js"></script>
+
+<script>
+// Google Pay integration for subscription payments
+class SubscriptionGooglePay {
+    constructor() {
+        this.isReady = false;
+        this.paymentsClient = null;
+        this.subscriptionData = null;
+    }
+    
+    async initialize() {
+        try {
+            // Fetch subscription data
+            const response = await fetch('/subscription/google-pay/config');
+            if (!response.ok) {
+                throw new Error('Failed to load payment configuration');
+            }
+            
+            const config = await response.json();
+            this.subscriptionData = config.subscription;
+            
+            // Create Google Pay client
+            this.paymentsClient = new google.payments.api.PaymentsClient({
+                environment: config.environment,
+                paymentDataCallbacks: {
+                    onPaymentAuthorized: this.onPaymentAuthorized.bind(this)
+                }
+            });
+            
+            // Check if ready to pay
+            const isReadyToPay = await this.paymentsClient.isReadyToPay({
+                apiVersion: 2,
+                apiVersionMinor: 0,
+                allowedPaymentMethods: config.paymentRequest.allowedPaymentMethods
+            });
+            
+            this.isReady = isReadyToPay.result;
+            
+            if (this.isReady) {
+                this.createButton();
+            }
+            
+        } catch (error) {
+            console.error('Error initializing Google Pay:', error);
+        }
+    }
+    
+    createButton() {
+        const container = document.getElementById('google-pay-button-container');
+        if (!container || !this.isReady) return;
+        
+        const button = this.paymentsClient.createButton({
+            buttonColor: 'black',
+            buttonType: 'buy',
+            buttonSizeMode: 'fill',
+            onClick: this.onButtonClick.bind(this)
+        });
+        
+        container.appendChild(button);
+    }
+    
+    async onButtonClick() {
+        try {
+            const paymentDataRequest = {
+                ...this.subscriptionData.paymentRequest,
+                transactionInfo: {
+                    ...this.subscriptionData.paymentRequest.transactionInfo,
+                    displayItems: [
+                        {
+                            label: `Africa SPA System - ${this.subscriptionData.active_branches} branches`,
+                            type: 'LINE_ITEM',
+                            price: this.subscriptionData.monthly_cost.toString(),
+                            status: 'FINAL'
+                        }
+                    ]
+                }
+            };
+            
+            const paymentData = await this.paymentsClient.loadPaymentData(paymentDataRequest);
+            
+            // Process payment
+            const response = await fetch('/subscription/google-pay/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: JSON.stringify({
+                    paymentToken: paymentData.paymentMethodToken
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showSuccess(result.transaction_id);
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            } else {
+                this.showError(result.error);
+            }
+            
+        } catch (error) {
+            console.error('Payment error:', error);
+            this.showError(error.message);
+        }
+    }
+    
+    async onPaymentAuthorized(paymentData) {
+        try {
+            const response = await fetch('/subscription/google-pay/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: JSON.stringify({
+                    paymentToken: paymentData.paymentMethodToken
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                return {
+                    transactionState: 'SUCCESS',
+                    data: result
+                };
+            } else {
+                return {
+                    transactionState: 'ERROR',
+                    error: {
+                        intent: 'PAYMENT_AUTHORIZATION',
+                        message: result.error,
+                        reason: 'OTHER_ERROR'
+                    }
+                };
+            }
+            
+        } catch (error) {
+            return {
+                transactionState: 'ERROR',
+                error: {
+                    intent: 'PAYMENT_AUTHORIZATION',
+                    message: error.message,
+                    reason: 'OTHER_ERROR'
+                }
+            };
+        }
+    }
+    
+    getCSRFToken() {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        return metaTag ? metaTag.getAttribute('content') : '';
+    }
+    
+    showSuccess(transactionId) {
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Payment Successful</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                        </div>
+                        <h6>Subscription Payment Completed</h6>
+                        <p class="text-muted">Transaction ID: ${transactionId}</p>
+                        <p class="lead">$${this.subscriptionData.monthly_cost.toFixed(2)}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Done</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        modal.addEventListener('hidden.bs.modal', () => {
+            document.body.removeChild(modal);
+        });
+    }
+    
+    showError(error) {
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Payment Failed</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
+                        </div>
+                        <h6>Payment Could Not Be Processed</h6>
+                        <p class="text-muted">${error}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Try Again</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        modal.addEventListener('hidden.bs.modal', () => {
+            document.body.removeChild(modal);
+        });
+    }
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof google !== 'undefined' && google.payments) {
+        const googlePay = new SubscriptionGooglePay();
+        googlePay.initialize();
+    }
+});
+</script>
+{% endblock %}

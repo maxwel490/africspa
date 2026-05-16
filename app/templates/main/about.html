@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}About Africa SPA System | Continental Salon Management Platform{% endblock %}
+{% block meta_description %}Learn about Africa SPA System, leading continental salon management platform empowering beauty businesses across 54 African countries with multi-tenant SaaS technology.{% endblock %}
+{% block meta_keywords %}About Africa SPA System, salon management Africa, continental SaaS, multi-tenant platform, African beauty industry{% endblock %}
+{% block canonical_url %}https://africspa.com/about{% endblock %}
+{% block og_description %}Discover Africa SPA System's mission to transform the African beauty industry through advanced technology and continental scale.{% endblock %}
+
+{# contact_info is passed from route #}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://africspa.com/"},
+        {"@type": "ListItem", "position": 2, "name": "About", "item": "https://africspa.com/about"}
+    ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="row g-4 align-items-center">
+        <div class="col-lg-6">
+            <h1 class="display-5 fw-bold mb-3">About Africa SPA System</h1>
+            <p class="lead text-muted">We are the leading continental salon management platform, empowering beauty businesses across 54 African countries with advanced multi-tenant SaaS technology.</p>
+            <p>Our mission is simple: democratize technology access for African salon owners. Whether you run a barbershop, beauty salon, or spa, our platform provides enterprise-grade tools at affordable prices, enabling you to scale your business without technical constraints.</p>
+            <div class="d-flex gap-3">
+                <a href="/demo" class="btn btn-primary rounded-pill px-4">Watch Demo</a>
+                <a href="/pricing" class="btn btn-primary rounded-pill px-4">View Pricing</a>
+                <a href="/trial" class="btn btn-outline-primary rounded-pill px-4">Start Free Trial</a>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <img src="{{ url_for('static', filename='images/africa-platform.jpg') }}" alt="Africa SPA System Platform" class="w-100" style="height: 380px; object-fit: cover;">
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-4 mb-4 bg-light rounded-4 px-4">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <h5 class="fw-bold">Coverage</h5>
+            <p class="text-muted mb-0">54 African countries with multi-currency support</p>
+        </div>
+        <div class="col-md-4">
+            <h5 class="fw-bold">Support</h5>
+            <p class="text-muted mb-0">24/7 customer support across all time zones</p>
+        </div>
+        <div class="col-md-4">
+            <h5 class="fw-bold">Contact</h5>
+            <p class="text-muted mb-0"><a href="mailto:{{ contact_info.support_email }}" class="text-decoration-none">{{ contact_info.support_email }}</a></p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Salon Owner Dashboard - Africa SPA System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-primary text-white py-3">
+                <h6 class="mb-0 small fw-bold text-uppercase">Branch View</h6>
+            </div>
+            <div class="card-body p-2 bg-light">
+                <form action="{{ request.path }}" method="get" id="branchSwitcher">
+                    <select name="branch" class="form-select form-select-sm border-0 bg-transparent" onchange="this.form.submit()">
+                        <option value="" {% if not request.args.get('branch') %}selected{% endif %}>🏢 All Branches</option>
+                        {% for b in managed_branches %}
+                            <option value="{{ b }}" {% if request.args.get('branch') == b %}selected{% endif %}>📍 {{ b }} Branch</option>
+                        {% endfor %}
+                    </select>
+                </form>
+                <div class="form-text mt-1">As tenant owner, you can manage all branches of your salon</div>
+            </div>
+        </div>
+
+        <div class="list-group shadow-sm border-0">
+            <div class="list-group-item bg-dark text-white border-0 py-3">
+                <h6 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Tenant Owner Control Panel</h6>
+            </div>
+            
+            {% set branch = request.args.get('branch') %}
+            
+            <a href="{{ url_for('admin.dashboard', branch=branch) }}" 
+               class="list-group-item list-group-item-action {{ 'active' if request.endpoint == 'admin.dashboard' }}">
+                <i class="bi bi-speedometer2 me-2"></i> Dashboard Overview
+            </a>
+            
+            <a href="{{ url_for('admin.staff_management', branch=branch) }}" 
+               class="list-group-item list-group-item-action {{ 'active' if 'staff' in request.endpoint }}">
+                <i class="bi bi-people me-2"></i> Staff Management
+            </a>
+
+            <a href="{{ url_for('admin.manage_services') }}" 
+               class="list-group-item list-group-item-action {{ 'active' if request.endpoint == 'admin.manage_services' }}">
+                <i class="bi bi-scissors me-2"></i> Service Menu
+            </a>
+
+            <a href="{{ url_for('admin.manage_branches', branch=branch) }}"
+               class="list-group-item list-group-item-action {{ 'active' if request.endpoint == 'admin.manage_branches' }}">
+                <i class="bi bi-diagram-3 me-2"></i> Branch Management
+            </a>
+
+            <a href="{{ url_for('admin.product_costs', branch=branch) }}" 
+               class="list-group-item list-group-item-action {{ 'active' if request.endpoint == 'admin.product_costs' }}">
+                <i class="bi bi-box-seam me-2"></i> Inventory Reconciliation
+            </a>
+            <a href="{{ url_for('admin.stock_control', branch=branch) }}" 
+                class="list-group-item list-group-item-action {{ 'active' if request.endpoint == 'admin.stock_control' }}">
+                <i class="bi bi-boxes me-2"></i> Stock Control
+            </a>
+
+            <a href="{{ url_for('admin.service_orders_analysis', branch=branch) }}" 
+               class="list-group-item list-group-item-action {{ 'active' if request.endpoint == 'admin.service_orders_analysis' }}">
+                <i class="bi bi-calendar-check me-2"></i> Service Orders Analysis
+            </a>
+
+            <a href="{{ url_for('admin.finance_report', branch=branch) }}" 
+               class="list-group-item list-group-item-action {{ 'active' if request.endpoint == 'admin.finance_report' }}">
+                <i class="bi bi-graph-up-arrow me-2"></i> Finance Reports
+            </a>
+
+            <a href="{{ url_for('subscription_payment.billing_dashboard') }}" 
+               class="list-group-item list-group-item-action {{ 'active' if request.endpoint == 'subscription_payment.billing_dashboard' }}">
+                <i class="bi bi-credit-card me-2"></i> Subscription Billing
+            </a>
+
+            <a href="{{ url_for('admin.manage_overheads', branch=branch) }}" 
+               class="list-group-item list-group-item-action text-danger fw-bold {{ 'active' if request.endpoint == 'admin.manage_overheads' }}">
+                <i class="bi bi-receipt-cutoff me-2"></i> Record Overheads
+            </a>
+
+            <a href="{{ url_for('admin.chat_support') }}" 
+               class="list-group-item list-group-item-action {{ 'active' if request.endpoint == 'admin.chat_support' }}">
+                <i class="bi bi-chat-dots me-2"></i> Support Chat
+            </a>
+
+            <a href="{{ url_for('admin.salon_settings') }}" 
+               class="list-group-item list-group-item-action {{ 'active' if request.endpoint == 'admin.salon_settings' or request.endpoint == 'admin.edit_profile' }}">
+                <i class="bi bi-gear me-2"></i> Settings
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        
+
+        {% if branch %}
+            <div class="alert alert-dark border-0 shadow-sm d-flex justify-content-between align-items-center mb-4 py-2">
+                <span class="small">Currently viewing: <span class="badge bg-primary ms-1">{{ branch }}</span></span>
+                <a href="{{ url_for(request.endpoint) }}" class="btn btn-sm btn-outline-light text-dark py-0 border-0">Clear Filter</a>
+            </div>
+        {% endif %}
+
+        {% block admin_content %}{% endblock %}
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<style>
+    .list-group-item-action {
+        transition: all 0.2s ease;
+        border: none;
+        padding: 0.8rem 1.25rem;
+    }
+    .list-group-item-action:hover {
+        background-color: #f8f9fa;
+        color: #0d6efd;
+        padding-left: 1.5rem;
+    }
+    .list-group-item.active {
+        background-color: #0d6efd !important;
+        border: none;
+        box-shadow: 0 4px 10px rgba(13, 110, 253, 0.15);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,779 @@
+{% extends "accountant/accountant_base.html" %}
+
+{% block accountant_content %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-12">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h4 class="mb-0 fw-bold text-dark"><i class="bi bi-arrow-repeat me-2 text-primary"></i>Service Rectification</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info border shadow-sm mb-4" role="alert">
+                        <div class="fw-bold mb-2">Enhanced Rectification System</div>
+                        <div class="small">
+                            <div class="mb-2">
+                                <strong>Financial Impact:</strong> 10% customer satisfaction discount applied to all rectifications.
+                            </div>
+                            <div class="mb-2">
+                                <strong>Staff Impact:</strong> Original salonist receives current-week deduction, redo salonist receives current-week commission.
+                            </div>
+                            <div>
+                                <strong>Product Costs:</strong> Adjusted rates - Hair (25%), Wash (40%), Nails/Makeup (30%), Undo (15%).
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if deduction_summary and deduction_summary.rows %}
+                    <div class="alert alert-info border shadow-sm mb-4" role="alert">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                            <div class="fw-bold">Latest Deduction Summary</div>
+                            <div class="small text-muted">Receipt: {{ deduction_summary.receipt_no }}</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-2">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Type</th>
+                                        <th scope="col">Service</th>
+                                        <th scope="col" class="text-end">Deduction (KES)</th>
+                                        <th scope="col" class="text-end">Affected Salonists</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in deduction_summary.rows %}
+                                    <tr>
+                                        <td>{{ row.type }}</td>
+                                        <td>{{ row.service }}</td>
+                                        <td class="text-end">{{ "{:,.2f}".format(row.deduction) }}</td>
+                                        <td class="text-end">{{ row.count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-end fw-bold">Total Deduction: KES {{ "{:,.2f}".format(deduction_summary.total or 0) }}</div>
+                        <small class="text-muted d-block mt-2">
+                            These deductions are posted to the current rectification week for affected original salonists.
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" id="rectificationForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token }}">
+
+                        <div class="row g-3 mb-4">
+                            <h6 class="text-uppercase text-muted small fw-bold">Rectification Context</h6>
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold text-primary">Select Original Receipt *</label>
+                                <select class="form-select" id="originalAppointmentSelect" name="original_receipt_no" required>
+                                    <option value="">Search receipt...</option>
+                                    {% for work in recent_work %}
+                                    <option value="{{ work.receipt_no if work.receipt_no else 'ID:' ~ work.id }}">
+                                        Receipt: {{ work.receipt_no if work.receipt_no else 'N/A (ID ' ~ work.id ~ ')' }} | {{ work.client.full_name if work.client else 'Walk-in' }} | {{ work.service_type }} (KES {{ work.total_cost }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="bg-light p-3 rounded border" id="visitServiceLockPanel" style="display:none;">
+                                    <div class="small fw-bold text-uppercase text-muted mb-2">Visit Services Status</div>
+                                    <div id="visitServiceBadges" class="d-flex flex-wrap gap-2"></div>
+                                    <small class="text-muted d-block mt-2">Only selected redo services stay active; others remain locked.</small>
+                                    <small class="text-muted d-block mt-1">Redo payout is credited this week; product/loss recovery is deducted this week from original salonist(s).</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-top pt-4">
+                            <div id="rowContainer"></div>
+                            <button type="button" class="btn btn-sm btn-dark" onclick="addNewRow()">+ Add Rectification Row</button>
+                        </div>
+
+                        <div class="card border-0 shadow-sm mt-4" id="impactPreviewPanel">
+                            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h6 class="mb-0 fw-bold"><i class="bi bi-list-check me-2 text-primary"></i>Preview Impact (This Week)</h6>
+                                <small class="text-muted">Live summary of who gets paid and who is deducted.</small>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="ps-3">Row</th>
+                                                <th>Service</th>
+                                                <th>Type</th>
+                                                <th>Payout This Week</th>
+                                                <th>Deduction This Week</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="impactPreviewBody">
+                                            <tr>
+                                                <td colspan="5" class="text-center py-3 text-muted">Add/edit rows to preview impact.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white d-flex justify-content-end gap-4 flex-wrap">
+                                <div class="small">Total Product Recovery: <strong id="impactTotalProductRecovery">KES 0.00</strong></div>
+                                <div class="small">Total Commission Recovery: <strong id="impactTotalCommissionRecovery">KES 0.00</strong></div>
+                                <div class="small">Total Payout This Week: <strong id="impactTotalPayout">KES 0.00</strong></div>
+                                <div class="small">Total Deduction This Week: <strong id="impactTotalDeduction">KES 0.00</strong></div>
+                            </div>
+                        </div>
+
+                        <div class="text-end border-top pt-4 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm">Submit Rectification</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="rowSeed">
+    <div class="card border mb-4 service-instance rectification-row shadow-sm">
+        <div class="card-body bg-light p-3">
+            <div class="row g-2 mb-3 align-items-center">
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-uppercase">Type</label>
+                    <select class="form-select rectification-type" name="service_type[]" required>
+                        <option value="Undo">Undo (Deduct)</option>
+                        <option value="Wash">Wash (Deduct)</option>
+                        <option value="Redo">Redo (Add New)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Complained Service *</label>
+                    <select class="form-select complained-service" name="complained_service[]" required>
+                        <option value="">Select service...</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-uppercase text-danger">Amount (KES)</label>
+                    <input type="number" name="amount[]" class="form-control redo-amount border-danger bg-white" step="0.01" min="0" value="0">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-uppercase">Extension Total</label>
+                    <input type="text" class="form-control bg-white redo-extension-total-input" value="0.00" readonly>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Final Base</label>
+                    <input type="number" name="final_base_price[]" class="form-control bg-white redo-final-base-preview" value="0.00" readonly>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label tiny-label">Front</label>
+                    <input type="number" name="comm_front[]" class="form-control border-primary bg-white text-center comm-front-preview" value="0.00" readonly>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label tiny-label">Back</label>
+                    <input type="number" name="comm_back[]" class="form-control border-info bg-white text-center comm-back-preview" value="0.00" readonly>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-12">
+                    <small class="text-danger fw-semibold d-block">Product Recovery: KES <span class="product-deduction-preview">0.00</span></small>
+                    <small class="text-danger fw-semibold d-block">Commission Recovery: KES <span class="commission-deduction-preview">0.00</span></small>
+                    <small class="text-danger fw-bold d-block">Total Original Team Deduction: KES <span class="orig-deduction-preview">0.00</span></small>
+                </div>
+            </div>
+
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-primary">Front Salonist *</label>
+                    <select class="form-select stylist-select" name="stylist_id[]" required>
+                        <option value="">Select stylist...</option>
+                        {% for s in staff %}
+                        <option value="{{ s.id }}">{{ s.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 back-stylist-wrap" style="display:none;">
+                    <label class="form-label small fw-bold">Back Salonist (Hair only)</label>
+                    <select class="form-select back-stylist-select" name="back_stylist_id[]" disabled>
+                        <option value="">N/A</option>
+                        {% for s in staff %}
+                        <option value="{{ s.id }}">{{ s.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1 text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRectificationRow(this)">×</button>
+                </div>
+            </div>
+
+            <div class="redo-extension-wrap product-nested-section mt-3 p-3 bg-white rounded border-start border-4 border-primary" style="display:none;">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="small fw-bold">Extensions Used (Redo Internal)</span>
+                    <button type="button" class="btn btn-link btn-sm p-0 add-extension-item">+ Add Item</button>
+                </div>
+                <div class="redo-extension-items"></div>
+                <small class="text-muted d-block mt-2">Total: KES <span class="redo-extension-total fw-bold">0.00</span></small>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+<script id="appointmentServiceMapData" type="application/json">{{ appointment_service_map|tojson }}</script>
+<script id="appointmentServiceDetailsMapData" type="application/json">{{ appointment_service_details_map|tojson }}</script>
+<script id="redoExtensionOptions" type="text/template">
+    <option value="">Select extension...</option>
+    {% for p in products %}
+    <option value="{{ p.id }}" data-price="{{ p.unit_price or 0 }}">{{ p.name }} (KES {{ "{:,.0f}".format(p.unit_price or 0) }})</option>
+    {% endfor %}
+</script>
+
+<script>
+const appointmentServiceMap = JSON.parse(document.getElementById('appointmentServiceMapData').textContent || '{}');
+const appointmentServiceDetailsMap = JSON.parse(document.getElementById('appointmentServiceDetailsMapData').textContent || '{}');
+const redoExtensionOptionsHtml = document.getElementById('redoExtensionOptions').innerHTML;
+let rectificationRowIndex = 0;
+
+function initSingleSelect2(element) {
+    $(element).select2({
+        width: '100%',
+        closeOnSelect: true,
+        dropdownAutoWidth: true
+    });
+}
+
+function closeAllRectificationSelect2() {
+    $('#rectificationForm select, #originalAppointmentSelect').each(function() {
+        if ($(this).data('select2')) {
+            $(this).select2('close');
+        }
+    });
+}
+
+$(document).ready(function() {
+    initSingleSelect2('#originalAppointmentSelect');
+    $('#originalAppointmentSelect').on('change', function() {
+        syncRowsWithVisitServices();
+    });
+
+    // Force dropdown collapse after selection to avoid sticky open states.
+    $(document).on('select2:select', '#rectificationForm select, #originalAppointmentSelect', function() {
+        $(this).select2('close');
+    });
+
+    // Close open Select2 dropdowns when clicking outside.
+    $(document).on('click', function(event) {
+        if (!$(event.target).closest('.select2-container, .select2-dropdown').length) {
+            closeAllRectificationSelect2();
+        }
+    });
+
+    addNewRow();
+    syncRowsWithVisitServices();
+
+    $('#rowContainer').on('change', '.complained-service, .rectification-type', function() {
+        syncRowMode($(this).closest('.rectification-row'));
+        refreshServiceLocks();
+        refreshDuplicateLocks();
+    });
+
+    $('#rowContainer').on('change input', '.redo-amount, .stylist-select, .back-stylist-select', function() {
+        updateCommissionPreview($(this).closest('.rectification-row'));
+    });
+
+    $('#rowContainer').on('change input', '.redo-extension-select, .redo-extension-qty', function() {
+        updateExtensionTotal($(this).closest('.rectification-row'));
+    });
+
+    $('#rowContainer').on('click', '.add-extension-item', function() {
+        const row = $(this).closest('.rectification-row');
+        addRedoExtensionItem(row);
+    });
+
+    $('#rowContainer').on('click', '.remove-extension-item', function() {
+        const row = $(this).closest('.rectification-row');
+        const items = row.find('.redo-extension-item');
+        if (items.length > 1) {
+            const selectEl = $(this).closest('.redo-extension-item').find('.redo-extension-select');
+            if (selectEl.length) {
+                selectEl.select2('destroy');
+            }
+            $(this).closest('.redo-extension-item').remove();
+            updateExtensionTotal(row);
+        }
+    });
+});
+
+function addNewRow() {
+    const template = document.getElementById('rowSeed').content.cloneNode(true);
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(template);
+    document.getElementById('rowContainer').appendChild(wrapper);
+
+    const lastRow = $('#rowContainer .rectification-row').last();
+    const rowIndex = rectificationRowIndex++;
+    lastRow.attr('data-row-index', rowIndex);
+    initSingleSelect2(lastRow.find('.stylist-select'));
+    initSingleSelect2(lastRow.find('.rectification-type'));
+    initSingleSelect2(lastRow.find('.complained-service'));
+    initSingleSelect2(lastRow.find('.back-stylist-select'));
+
+    initializeRedoExtensionSection(lastRow, rowIndex);
+
+    populateServiceSelect(lastRow.find('.complained-service')[0]);
+    syncRowMode(lastRow);
+    refreshServiceLocks();
+    refreshDuplicateLocks();
+    updateImpactPreview();
+}
+
+function initializeRedoExtensionSection(row, rowIndex) {
+    const container = row.find('.redo-extension-items');
+    container.empty();
+    addRedoExtensionItem(row, rowIndex);
+    updateExtensionTotal(row);
+}
+
+function addRedoExtensionItem(row, explicitRowIndex = null) {
+    const rowIndex = explicitRowIndex !== null ? explicitRowIndex : row.data('row-index');
+    const itemHtml = `
+        <div class="row g-2 align-items-center mb-2 redo-extension-item">
+            <div class="col-7">
+                <select class="form-select form-select-sm redo-extension-select" name="redo_product_id[${rowIndex}][]">
+                    ${redoExtensionOptionsHtml}
+                </select>
+            </div>
+            <div class="col-3">
+                <input type="number" class="form-control form-control-sm redo-extension-qty" name="redo_product_qty[${rowIndex}][]" min="0" value="0">
+            </div>
+            <div class="col-2 text-end">
+                <button type="button" class="btn btn-sm btn-outline-danger remove-extension-item">×</button>
+            </div>
+        </div>
+    `;
+
+    const wrapper = $(itemHtml);
+    row.find('.redo-extension-items').append(wrapper);
+    initSingleSelect2(wrapper.find('.redo-extension-select'));
+    updateExtensionTotal(row);
+}
+
+function updateExtensionTotal(row) {
+    let total = 0;
+    row.find('.redo-extension-item').each(function() {
+        const price = parseFloat($(this).find('.redo-extension-select option:selected').data('price')) || 0;
+        const qty = parseFloat($(this).find('.redo-extension-qty').val()) || 0;
+        total += (price * qty);
+    });
+    row.find('.redo-extension-total').text(total.toFixed(2));
+    row.find('.redo-extension-total-input').val(total.toFixed(2));
+    updateCommissionPreview(row);
+}
+
+function updateCommissionPreview(row) {
+    const typeVal = row.find('.rectification-type').val();
+    const serviceVal = row.find('.complained-service').val();
+    const details = getCurrentVisitServiceDetails()[serviceVal] || {};
+    const amountVal = parseFloat(row.find('.redo-amount').val()) || 0;
+    const extensionTotal = parseFloat(row.find('.redo-extension-total').text()) || 0;
+    const backStylistId = row.find('.back-stylist-select').val();
+    const frontStylistId = row.find('.stylist-select').val();
+    const hasDualAssignment = !!backStylistId && String(backStylistId) !== String(frontStylistId);
+
+    let frontCommission = 0;
+    let backCommission = 0;
+    let finalBase = 0;
+    let productRecovery = 0;
+    let commissionRecovery = 0;
+    let originalDeduction = 0;
+
+    function nonHairProductRate(serviceName) {
+        if (serviceName === 'Wash') {
+            return 0.40;
+        }
+        if (serviceName === 'Nails' || serviceName === 'Makeup') {
+            return 0.30;
+        }
+        return 0;
+    }
+
+    if (typeVal === 'Redo') {
+        const priorCommissionRecovery = Math.max(0, parseFloat(details.prior_commission_paid) || 0);
+
+        if (serviceVal === 'Hair') {
+            productRecovery = Math.max(0, parseFloat(details.prior_product_cost) || 0);
+            const reclaimableBase = Math.max(0, amountVal - extensionTotal);
+            commissionRecovery = Math.min(priorCommissionRecovery, reclaimableBase * 0.5);
+        } else {
+            productRecovery = Math.max(0, amountVal * nonHairProductRate(serviceVal));
+            commissionRecovery = priorCommissionRecovery;
+        }
+        // Redo must claw back original paid commission plus product/loss recovery.
+        originalDeduction = productRecovery + commissionRecovery;
+
+        const netAfterExtension = Math.max(0, amountVal - extensionTotal);
+
+        if (serviceVal === 'Hair') {
+            finalBase = netAfterExtension;
+            const commissionPool = netAfterExtension * 0.5;
+
+            if (hasDualAssignment) {
+                frontCommission = commissionPool / 2.0;
+                backCommission = commissionPool - frontCommission;
+            } else {
+                frontCommission = commissionPool;
+                backCommission = 0;
+            }
+        } else {
+            finalBase = Math.max(0, amountVal);
+
+            const nonHairProductCost = Math.max(0, amountVal * nonHairProductRate(serviceVal));
+            let salonShareRate = 0;
+            if (serviceVal === 'Wash') {
+                salonShareRate = 0.30;
+            } else if (serviceVal === 'Nails' || serviceVal === 'Makeup') {
+                salonShareRate = 0.35;
+            }
+            const salonShare = Math.max(0, amountVal * salonShareRate);
+            const commissionPool = Math.max(0, amountVal - nonHairProductCost - salonShare);
+
+            if (hasDualAssignment) {
+                frontCommission = commissionPool / 2.0;
+                backCommission = commissionPool - frontCommission;
+            } else {
+                frontCommission = commissionPool;
+                backCommission = 0;
+            }
+        }
+
+        // Same-stylist guard: if already part of original paid team, no redo commission.
+        const originalWorkerIds = new Set();
+        if (details.front_worker_id) {
+            originalWorkerIds.add(String(details.front_worker_id));
+        }
+        if (details.back_worker_id) {
+            originalWorkerIds.add(String(details.back_worker_id));
+        }
+        if (frontStylistId && originalWorkerIds.has(String(frontStylistId))) {
+            frontCommission = 0;
+        }
+        if (backStylistId && originalWorkerIds.has(String(backStylistId))) {
+            backCommission = 0;
+        }
+    } else {
+        finalBase = Math.max(0, amountVal);
+        if (typeVal === 'Undo' || typeVal === 'Wash') {
+            // Prep rows deduct the same amount from the original team in current week.
+            originalDeduction = finalBase;
+        }
+    }
+
+    row.find('.redo-final-base-preview').val(finalBase.toFixed(2));
+    row.find('.comm-front-preview').val(frontCommission.toFixed(2));
+    row.find('.comm-back-preview').val(backCommission.toFixed(2));
+    row.find('.product-deduction-preview').text(productRecovery.toFixed(2));
+    row.find('.commission-deduction-preview').text(commissionRecovery.toFixed(2));
+    row.find('.orig-deduction-preview').text(originalDeduction.toFixed(2));
+    updateImpactPreview();
+}
+
+function removeRectificationRow(btn) {
+    const rows = document.querySelectorAll('#rowContainer .rectification-row');
+    if (rows.length > 1) {
+        const row = btn.closest('.rectification-row');
+        $(row).find('select').select2('destroy');
+        row.remove();
+        refreshServiceLocks();
+        refreshDuplicateLocks();
+        updateImpactPreview();
+    }
+}
+
+function syncRowMode(row) {
+    const serviceVal = row.find('.complained-service').val();
+    const typeVal = row.find('.rectification-type').val();
+    const backWrap = row.find('.back-stylist-wrap');
+    const backSelect = row.find('.back-stylist-select');
+    const frontSelect = row.find('.stylist-select');
+    const amountInput = row.find('.redo-amount');
+    const extensionWrap = row.find('.redo-extension-wrap');
+    const extensionSelect = row.find('.redo-extension-select');
+    const details = getCurrentVisitServiceDetails()[serviceVal] || {};
+
+    const useDualHair = serviceVal === 'Hair' && typeVal === 'Redo';
+    if (useDualHair) {
+        backWrap.show();
+        backSelect.prop('disabled', false);
+    } else {
+        backSelect.val('').trigger('change.select2');
+        backSelect.prop('disabled', true);
+        backWrap.hide();
+    }
+
+    if (useDualHair || (serviceVal === 'Hair' && typeVal === 'Redo')) {
+        extensionWrap.show();
+        extensionWrap.find('select, input, button').prop('disabled', false);
+        if (!row.find('.redo-extension-item').length) {
+            initializeRedoExtensionSection(row, row.data('row-index'));
+        }
+    } else {
+        row.find('.redo-extension-select').val('').trigger('change.select2');
+        row.find('.redo-extension-qty').val('0');
+        extensionWrap.find('select, input, button').prop('disabled', true);
+        updateExtensionTotal(row);
+        extensionWrap.hide();
+    }
+
+    if (typeVal === 'Redo') {
+        if (details.front_worker_id) {
+            frontSelect.val(String(details.front_worker_id)).trigger('change.select2');
+        }
+        if (useDualHair && details.back_worker_id) {
+            backSelect.val(String(details.back_worker_id)).trigger('change.select2');
+        }
+        amountInput.val(Number(details.redo_amount || 0).toFixed(2));
+        amountInput.prop('readonly', true);
+    } else {
+        amountInput.prop('readonly', false);
+    }
+
+    updateCommissionPreview(row);
+}
+
+function getCurrentVisitServices() {
+    const selectedAppointment = $('#originalAppointmentSelect').val();
+    const services = appointmentServiceMap[selectedAppointment] || [];
+    return services;
+}
+
+function getCurrentVisitServiceDetails() {
+    const selectedAppointment = $('#originalAppointmentSelect').val();
+    return appointmentServiceDetailsMap[selectedAppointment] || {};
+}
+
+function populateServiceSelect(selectEl) {
+    const services = getCurrentVisitServices();
+    const previousValue = $(selectEl).val();
+    const html = ['<option value="">Select service...</option>']
+        .concat(services.map(s => `<option value="${s}">${s}</option>`))
+        .join('');
+
+    $(selectEl).html(html);
+    if (previousValue && services.includes(previousValue)) {
+        $(selectEl).val(previousValue);
+    } else {
+        $(selectEl).val('');
+    }
+    $(selectEl).trigger('change.select2');
+}
+
+function syncRowsWithVisitServices() {
+    $('#rowContainer .complained-service').each(function() {
+        populateServiceSelect(this);
+    });
+    $('#rowContainer .rectification-row').each(function() {
+        syncRowMode($(this));
+    });
+    refreshServiceLocks();
+    refreshDuplicateLocks();
+    updateImpactPreview();
+}
+
+function refreshServiceLocks() {
+    const services = getCurrentVisitServices();
+    const panel = document.getElementById('visitServiceLockPanel');
+    const badges = document.getElementById('visitServiceBadges');
+
+    if (!services.length) {
+        panel.style.display = 'none';
+        badges.innerHTML = '';
+        return;
+    }
+
+    const selectedRedos = new Set();
+    $('#rowContainer .rectification-row').each(function() {
+        const typeVal = $(this).find('.rectification-type').val();
+        const svcVal = $(this).find('.complained-service').val();
+        if (typeVal === 'Redo' && svcVal) {
+            selectedRedos.add(svcVal);
+        }
+    });
+
+    badges.innerHTML = services.map(serviceName => {
+        if (selectedRedos.has(serviceName)) {
+            return `<span class="badge bg-success-subtle text-success border border-success">${serviceName} • Redo Selected</span>`;
+        }
+        return `<span class="badge bg-secondary-subtle text-secondary border border-secondary">${serviceName} • Locked</span>`;
+    }).join('');
+
+    panel.style.display = 'block';
+}
+
+function refreshDuplicateLocks() {
+    const complaintScope = new Set();
+    $('#rowContainer .rectification-row').each(function() {
+        const typeVal = $(this).find('.rectification-type').val();
+        const svcVal = $(this).find('.complained-service').val();
+        if ((typeVal === 'Undo' || typeVal === 'Wash') && svcVal) {
+            complaintScope.add(svcVal);
+        }
+    });
+
+    const pickedByRow = [];
+    $('#rowContainer .rectification-row').each(function() {
+        const typeVal = $(this).find('.rectification-type').val();
+        const svcVal = $(this).find('.complained-service').val();
+        pickedByRow.push(typeVal === 'Redo' ? svcVal : '');
+    });
+
+    $('#rowContainer .rectification-row').each(function(index) {
+        const rowType = $(this).find('.rectification-type').val();
+        const ownValue = pickedByRow[index];
+        const blocked = new Set(pickedByRow.filter((v, i) => i !== index && !!v));
+        $(this).find('.complained-service option').each(function() {
+            if (!this.value) {
+                this.disabled = false;
+                return;
+            }
+
+            let shouldDisable = blocked.has(this.value) && this.value !== ownValue;
+
+            // If Undo/Wash complaint scope is defined, Redo rows must stay inside that scope.
+            if (rowType === 'Redo' && complaintScope.size > 0 && !complaintScope.has(this.value) && this.value !== ownValue) {
+                shouldDisable = true;
+            }
+
+            this.disabled = shouldDisable;
+        });
+
+        // Auto-correct invalid Redo selection when complaint scope changes.
+        if (rowType === 'Redo' && complaintScope.size > 0) {
+            const currentVal = $(this).find('.complained-service').val();
+            if (currentVal && !complaintScope.has(currentVal)) {
+                $(this).find('.complained-service').val('').trigger('change.select2');
+            }
+        }
+    });
+
+    updateImpactPreview();
+}
+
+function getStaffNameById(workerId) {
+    if (!workerId) {
+        return 'Unknown';
+    }
+    const option = $(`.stylist-select option[value="${workerId}"]`).first();
+    return option.length ? option.text().trim() : `Staff #${workerId}`;
+}
+
+function formatKes(value) {
+    const amount = Number(value || 0);
+    return `KES ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function updateImpactPreview() {
+    const rows = $('#rowContainer .rectification-row');
+    const previewBody = $('#impactPreviewBody');
+
+    if (!rows.length) {
+        previewBody.html('<tr><td colspan="5" class="text-center py-3 text-muted">Add/edit rows to preview impact.</td></tr>');
+        $('#impactTotalProductRecovery').text('KES 0.00');
+        $('#impactTotalCommissionRecovery').text('KES 0.00');
+        $('#impactTotalPayout').text('KES 0.00');
+        $('#impactTotalDeduction').text('KES 0.00');
+        return;
+    }
+
+    let totalPayout = 0;
+    let totalProductRecovery = 0;
+    let totalCommissionRecovery = 0;
+    let totalDeduction = 0;
+    const detailsMap = getCurrentVisitServiceDetails();
+    const rowsHtml = [];
+
+    rows.each(function(index) {
+        const row = $(this);
+        const typeVal = row.find('.rectification-type').val() || '-';
+        const serviceVal = row.find('.complained-service').val() || '-';
+        const frontName = row.find('.stylist-select option:selected').text() || 'Unassigned';
+        const backName = row.find('.back-stylist-select option:selected').text() || '';
+
+        const frontCommission = parseFloat(row.find('.comm-front-preview').val()) || 0;
+        const backCommission = parseFloat(row.find('.comm-back-preview').val()) || 0;
+        const amountVal = parseFloat(row.find('.redo-amount').val()) || 0;
+        const productRecovery = parseFloat(row.find('.product-deduction-preview').text()) || 0;
+        const commissionRecovery = parseFloat(row.find('.commission-deduction-preview').text()) || 0;
+        const originalDeduction = parseFloat(row.find('.orig-deduction-preview').text()) || 0;
+
+        let payoutText = '-';
+        let deductionText = '-';
+        let rowPayout = 0;
+        let rowDeduction = 0;
+
+        if (typeVal === 'Redo') {
+            rowPayout = frontCommission + backCommission;
+            rowDeduction = originalDeduction;
+
+            if (backCommission > 0 && backName && backName !== 'N/A') {
+                payoutText = `${frontName} + ${backName}: ${formatKes(rowPayout)}`;
+            } else {
+                payoutText = `${frontName}: ${formatKes(frontCommission)}`;
+            }
+
+            const serviceDetails = detailsMap[serviceVal] || {};
+            const impacted = [];
+            if (serviceDetails.front_worker_id) {
+                impacted.push(getStaffNameById(String(serviceDetails.front_worker_id)));
+            }
+            if (serviceDetails.back_worker_id) {
+                impacted.push(getStaffNameById(String(serviceDetails.back_worker_id)));
+            }
+            const impactedText = impacted.length ? impacted.join(', ') : 'Original service team';
+            deductionText = `${impactedText}: ${formatKes(rowDeduction)}`;
+            deductionText += `<div class="text-muted">Prod ${formatKes(productRecovery)} | Comm ${formatKes(commissionRecovery)}</div>`;
+        } else if (typeVal === 'Undo' || typeVal === 'Wash') {
+            rowPayout = amountVal;
+            rowDeduction = originalDeduction;
+            payoutText = `${frontName} (${formatKes(rowPayout)})`;
+
+            const serviceDetails = detailsMap[serviceVal] || {};
+            const impacted = [];
+            if (serviceDetails.front_worker_id) {
+                impacted.push(getStaffNameById(String(serviceDetails.front_worker_id)));
+            }
+            if (serviceDetails.back_worker_id) {
+                impacted.push(getStaffNameById(String(serviceDetails.back_worker_id)));
+            }
+            const impactedText = impacted.length ? impacted.join(', ') : 'Original service team';
+            deductionText = `${impactedText}: ${formatKes(rowDeduction)}`;
+        }
+
+        totalPayout += rowPayout;
+        totalProductRecovery += productRecovery;
+        totalCommissionRecovery += commissionRecovery;
+        totalDeduction += rowDeduction;
+
+        rowsHtml.push(`
+            <tr>
+                <td class="ps-3 small fw-bold">#${index + 1}</td>
+                <td class="small">${serviceVal}</td>
+                <td><span class="badge bg-light text-dark border">${typeVal}</span></td>
+                <td class="small text-success">${payoutText}</td>
+                <td class="small text-danger">${deductionText}</td>
+            </tr>
+        `);
+    });
+
+    previewBody.html(rowsHtml.join(''));
+    $('#impactTotalProductRecovery').text(formatKes(totalProductRecovery));
+    $('#impactTotalCommissionRecovery').text(formatKes(totalCommissionRecovery));
+    $('#impactTotalPayout').text(formatKes(totalPayout));
+    $('#impactTotalDeduction').text(formatKes(totalDeduction));
+}
+</script>
+
+<style>
+.tiny-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #6c757d; }
+</style>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Chat with Super Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-chat-dots me-2"></i>Chat with Super Admin
+                        {% if unread_count > 0 %}
+                        <span class="badge bg-danger ms-2">{{ unread_count }}</span>
+                        {% endif %}
+                    </h5>
+                    <button class="btn btn-sm btn-outline-light" onclick="refreshMessages()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Chat Messages -->
+                    <div id="chatMessages" class="chat-messages" style="height: 400px; overflow-y: auto; padding: 20px; background-color: #f8f9fa;">
+                        {% for message in messages %}
+                        <div class="message mb-3 {% if message.sender_id == current_user.id %}sent{% else %}received{% endif %}">
+                            <div class="d-flex {% if message.sender_id == current_user.id %}justify-content-end{% else %}justify-content-start{% endif %}">
+                                <div class="message-bubble {% if message.sender_id == current_user.id %}bg-primary text-white{% else %}bg-light{% endif %} 
+                                             p-3 rounded-3" style="max-width: 70%;">
+                                    <div class="small fw-bold mb-1">
+                                        {{ message.sender_name }}
+                                        <span class="text-muted ms-2">{{ message.created_at.strftime('%H:%M') }}</span>
+                                        {% if message.sender_id != current_user.id and not message.is_read %}
+                                        <span class="badge bg-info ms-2">New</span>
+                                        {% endif %}
+                                    </div>
+                                    <div>{{ message.content }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Message Input -->
+                    <div class="message-input p-3 border-top">
+                        <form id="messageForm" class="d-flex gap-2">
+                            <input type="text" id="messageInput" class="form-control" 
+                                   placeholder="Type your message..." maxlength="500" required>
+                            <button type="submit" class="btn btn-primary" id="sendBtn">
+                                <i class="bi bi-send"></i> Send
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .chat-messages {
+        scrollbar-width: thin;
+    }
+    
+    .message-bubble {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .sent .message-bubble {
+        border-bottom-right-radius: 0.5rem !important;
+    }
+    
+    .received .message-bubble {
+        border-bottom-left-radius: 0.5rem !important;
+    }
+</style>
+
+<script>
+document.getElementById('messageForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const content = messageInput.value.trim();
+    
+    if (!content) return;
+    
+    // Disable form
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
+    
+    // Send message
+    fetch('{{ url_for("admin.send_chat_message") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'message=' + encodeURIComponent(content)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Add message to chat
+            addMessageToChat(data.message, true);
+            
+            // Clear input
+            messageInput.value = '';
+            
+            // Scroll to bottom
+            scrollToBottom();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to send message');
+    })
+    .finally(() => {
+        // Re-enable form
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="bi bi-send"></i> Send';
+        messageInput.focus();
+    });
+});
+
+function addMessageToChat(message, isSent) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message mb-3 ' + (isSent ? 'sent' : 'received');
+    
+    messageDiv.innerHTML = `
+        <div class="d-flex ${isSent ? 'justify-content-end' : 'justify-content-start'}">
+            <div class="message-bubble ${isSent ? 'bg-primary text-white' : 'bg-light'} p-3 rounded-3" style="max-width: 70%;">
+                <div class="small fw-bold mb-1">
+                    ${message.sender_name}
+                    <span class="text-muted ms-2">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                </div>
+                <div>${message.content}</div>
+            </div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+}
+
+function scrollToBottom() {
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function refreshMessages() {
+    window.location.reload();
+}
+
+// Auto-scroll to bottom on load
+document.addEventListener('DOMContentLoaded', scrollToBottom);
+
+// Auto-refresh every 30 seconds
+setInterval(refreshMessages, 30000);
+</script>
+{% endblock %}

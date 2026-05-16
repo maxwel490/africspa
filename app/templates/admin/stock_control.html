@@ -1,0 +1,175 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_content %}
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 border-bottom">
+        <h6 class="mb-0 text-uppercase fw-bold">Initialize Item Across All Branches</h6>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.stock_control', branch=branch) }}" class="row g-3">
+            <input type="hidden" name="action" value="add_global_item">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Item Name</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Shampoo" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">Type</label>
+                <select name="item_type" class="form-select" required>
+                    <option value="Salon">Salon</option>
+                    {% if current_user.salon and current_user.salon.has_internal_shop %}
+                    <option value="Shop">Shop</option>
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">Department</label>
+                <select name="department" class="form-select" required>
+                    <option value="Wash">Wash</option>
+                    <option value="Hair">Hair</option>
+                    <option value="Nails">Nails</option>
+                    <option value="Makeup">Makeup</option>
+                </select>
+            </div>
+            <div class="col-md-2" id="sellingPriceWrap">
+                <label class="form-label small fw-bold text-muted">Selling Price (KSh)</label>
+                <input type="number" id="addUnitPrice" name="unit_price" class="form-control" min="0" step="0.01" required>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label small fw-bold text-muted">Qty</label>
+                <input type="number" name="quantity" class="form-control" min="0" value="0" required>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Add</button>
+            </div>
+            <div class="col-12">
+                <small class="text-muted">Rule: Shop items and Salon-Hair items have selling prices. Salon Wash/Nails/Makeup keep selling price as N/A.</small>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+        <h6 class="mb-0 text-uppercase fw-bold">Stock Reconciliation & Control</h6>
+        <span class="badge bg-light text-dark">Branch: {{ branch or 'All' }}</span>
+    </div>
+    <div class="card-body">
+        {% if product_data %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Product Details</th>
+                        <th>Branch</th>
+                        <th>Status</th>
+                        <th class="text-center">Initial / Total</th>
+                        <th class="text-center">Used / Sold</th>
+                        <th class="text-center">Current Balance</th>
+                        <th style="width:340px;">Update Inventory</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in product_data %}
+                    {% set product = item.product %}
+                    {% set stock = product.stock_quantity or 0 %}
+                    {% set used = item.used_stock or 0 %}
+                    {% set balance = item.remaining_stock %}
+                    {% set low_stock_threshold = 5 %}
+
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-primary">{{ product.name }}</div>
+                            <small class="text-muted">{{ product.category }} | {{ product.department }}</small><br>
+                            {% set has_selling_price = (product.category == 'Shop') or (product.category == 'Salon' and product.department == 'Hair') %}
+                            {% if has_selling_price %}
+                            <small class="fw-bold text-dark">KES {{ "{:,.2f}".format(product.unit_price or 0) }}</small>
+                            {% else %}
+                            <small class="fw-bold text-muted">Selling Price: N/A</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ product.branch }}</span>
+                        </td>
+                        <td>
+                            {% if balance <= 0 %}
+                                <span class="badge bg-danger">Out of Stock</span>
+                            {% elif balance <= low_stock_threshold %}
+                                <span class="badge bg-warning text-dark">Low Stock</span>
+                            {% else %}
+                                <span class="badge bg-success">Healthy</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center fw-bold">{{ stock }}</td>
+                        <td class="text-center"><span class="text-danger">- {{ used }}</span></td>
+                        <td class="text-center">
+                            <h5 class="mb-0">
+                                <span class="badge {{ 'bg-danger' if balance <= low_stock_threshold else 'bg-primary' }}">
+                                    {{ balance }}
+                                </span>
+                            </h5>
+                        </td>
+                        <td>
+                            {% set has_selling_price = (product.category == 'Shop') or (product.category == 'Salon' and product.department == 'Hair') %}
+                            <form method="POST" class="input-group input-group-sm" action="{{ url_for('admin.stock_control', branch=branch) }}">
+                                <input type="hidden" name="action" value="adjust_stock">
+                                <input type="hidden" name="product_id" value="{{ product.id }}">
+                                <input type="number" name="quantity" class="form-control" placeholder="Qty" min="0" required>
+                                {% if has_selling_price %}
+                                <input type="number" name="unit_price" class="form-control" placeholder="Selling KSh" min="0" step="0.01" value="{{ product.unit_price or 0 }}" required>
+                                {% else %}
+                                <input type="hidden" name="unit_price" value="0">
+                                <input type="text" class="form-control text-muted" value="Selling N/A" readonly>
+                                {% endif %}
+                                <button type="submit" class="btn btn-outline-primary" title="Adjust Total Stock">Adjust</button>
+                            </form>
+                            <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">*Updates quantity{% if has_selling_price %} and selling price{% endif %}</small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-box-seam display-1 text-muted"></i>
+            <p class="mt-3">No products found for this branch.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const itemType = document.querySelector('select[name="item_type"]');
+    const department = document.querySelector('select[name="department"]');
+    const sellingInput = document.getElementById('addUnitPrice');
+
+    const syncSellingState = () => {
+        const typeVal = (itemType?.value || '').trim();
+        const deptVal = (department?.value || '').trim();
+        const requiresSelling = (typeVal === 'Shop') || (typeVal === 'Salon' && deptVal === 'Hair');
+
+        if (!sellingInput) return;
+        if (requiresSelling) {
+            const wrap = document.getElementById('sellingPriceWrap');
+            if (wrap) wrap.style.display = '';
+            sellingInput.readOnly = false;
+            sellingInput.required = true;
+            if ((sellingInput.value || '').trim() === '') {
+                sellingInput.value = '0';
+            }
+        } else {
+            const wrap = document.getElementById('sellingPriceWrap');
+            if (wrap) wrap.style.display = 'none';
+            sellingInput.value = '0';
+            sellingInput.readOnly = true;
+            sellingInput.required = false;
+        }
+    };
+
+    itemType?.addEventListener('change', syncSellingState);
+    department?.addEventListener('change', syncSellingState);
+    syncSellingState();
+});
+</script>
+{% endblock %}

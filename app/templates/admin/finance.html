@@ -1,0 +1,148 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_content %}
+<div class="container mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Financial Reports</h2>
+            <p class="text-muted">
+                {% if request.args.get('branch') %}
+                    Detailed analysis for <strong>{{ request.args.get('branch') }}</strong>
+                {% else %}
+                    Consolidated Group Overview (All Branches)
+                {% endif %}
+            </p>
+        </div>
+        <div class="btn-group">
+            <button onclick="window.print()" class="btn btn-outline-dark btn-sm">
+                <i class="bi bi-printer me-1"></i> Print Report
+            </button>
+            <a href="{{ url_for('admin.dashboard', branch=request.args.get('branch')) }}" class="btn btn-dark btn-sm">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white border-0 shadow-sm">
+                <div class="card-body py-4">
+                    <h6 class="text-uppercase opacity-75 small fw-bold">7-Day Revenue</h6>
+                    <h2 class="fw-bold">KSh {{ "{:,.2f}".format(weekly | default(0)) }}</h2>
+                    <small>Real-time tracked</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white border-0 shadow-sm">
+                <div class="card-body py-4">
+                    <h6 class="text-uppercase opacity-75 small fw-bold">Current Month Revenue</h6>
+                    <h2 class="fw-bold">KSh {{ "{:,.2f}".format(monthly | default(0)) }}</h2>
+                    <small>{{ current_month_name }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-white border-0 shadow-sm">
+                <div class="card-body py-4">
+                    <h6 class="text-uppercase opacity-75 small fw-bold">Branch Efficiency</h6>
+                    <h2 class="fw-bold">
+                        {% set mon = monthly | default(0) %}
+                        {% set prof = true_profit | default(0) %}
+                        {{ "{:,.1f}".format((prof / mon * 100) if mon > 0 else 0) }}%
+                    </h2>
+                    <small>Net Profit Margin</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold">Profit & Loss Statement</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <span class="fw-bold">Direct Salon Income (Cut + Surplus)</span>
+                            <span class="fw-bold text-primary">KSh {{ "{:,.2f}".format(base_revenue | default(0)) }}</span>
+                        </div>
+                        
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <div class="d-flex flex-column">
+                                <span class="text-muted small">Departmental Performance Adjustment</span>
+                                <small class="text-muted" style="font-size: 0.7rem;">(Fund Surplus/Deficit after Utilities & Stock)</small>
+                            </div>
+                            {% set adj = dept_adjustment | default(0) %}
+                            <span class="{{ 'text-success' if adj >= 0 else 'text-danger' }}">
+                                {{ "+" if adj >= 0 else "" }}KSh {{ "{:,.2f}".format(adj) }}
+                            </span>
+                        </div>
+
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <div class="d-flex flex-column">
+                                <span class="text-muted small">+ Month-End Reconciliation Surplus</span>
+                                <small class="text-muted" style="font-size: 0.7rem;">(Positive final surplus from monthly reconciliation)</small>
+                            </div>
+                            <span class="text-success">KSh {{ "{:,.2f}".format(month_end_surplus | default(0)) }}</span>
+                        </div>
+
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <div class="d-flex flex-column">
+                                <span class="text-muted small">- Month-End Reconciliation Deficit</span>
+                                <small class="text-muted" style="font-size: 0.7rem;">(Negative final deficit from monthly reconciliation)</small>
+                            </div>
+                            <span class="text-danger">KSh {{ "{:,.2f}".format(month_end_deficit | default(0)) }}</span>
+                        </div>
+
+                        <hr class="my-2">
+
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <span class="text-muted small">- Staff Salaries (Fixed Costs)</span>
+                            <span class="text-danger">KSh {{ "{:,.2f}".format(salaries | default(0)) }}</span>
+                        </div>
+
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <div class="d-flex flex-column">
+                                <span class="text-muted small">- Operating Overheads</span>
+                                <small class="text-info" style="font-size: 0.7rem;">Rent, Power/Water</small>
+                            </div>
+                            <span class="text-danger">KSh {{ "{:,.2f}".format(overheads | default(0)) }}</span>
+                        </div>
+
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 mt-3 pt-3 border-top bg-light p-3 rounded">
+                            <h5 class="mb-0 fw-bold">Net Business Profit</h5>
+                            <h4 class="mb-0 fw-bold text-success">KSh {{ "{:,.2f}".format(true_profit | default(0)) }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm bg-light mb-4">
+                <div class="card-body">
+                    <h6 class="fw-bold text-uppercase small text-muted">Accounting Breakdown</h6>
+                    <hr>
+                    <div class="mb-3">
+                        <label class="small fw-bold d-block text-dark">1. Base Salon Income</label>
+                        <p class="small text-muted mb-0">The fixed <strong>Salon Cut</strong> and <strong>Salon Surplus</strong> from the transactions table.</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-bold d-block text-dark">2. Fund Performance</label>
+                        <p class="small text-muted mb-0">The variance in departments after reconciling usage costs against income.</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-bold d-block text-dark">3. Month-End Surplus Transfer</label>
+                        <p class="small text-muted mb-0">Positive monthly reconciliation surplus is automatically directed into this finance report.</p>
+                    </div>
+                    <div class="alert alert-warning py-2 small border-0 shadow-sm">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        <strong>Branch Note:</strong> Profit is calculated after deducting salaries and overheads recorded for <strong>{{ branch or 'this location' }}</strong>.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

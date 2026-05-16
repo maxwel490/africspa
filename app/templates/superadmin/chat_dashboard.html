@@ -1,0 +1,516 @@
+{% extends "superadmin/superadmin_base.html" %}
+
+{% block title %}Advanced Chat Dashboard - Super Admin{% endblock %}
+
+{% set page_title = '💬 Advanced Customer Support' %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Advanced Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1">Customer Support Center</h4>
+            <p class="text-muted mb-0">Real-time conversations with customers and tenants</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm" onclick="refreshConversations()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+            </button>
+            <button class="btn btn-outline-success btn-sm" onclick="markAllAsRead()">
+                <i class="bi bi-check-all me-1"></i> Mark All Read
+            </button>
+            {% if unread_count > 0 %}
+            <span class="badge bg-danger">{{ unread_count }} unread</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Conversations List -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-gradient-primary text-white" style="background: linear-gradient(135deg, #0d6efd, #0a58ca);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-chat-dots me-2"></i>Active Conversations
+                        </h6>
+                        <span id="conversationCount" class="badge bg-white text-primary">{{ conversations|length }}</span>
+                    </div>
+                </div>
+                <div class="card-body p-0" style="max-height: 600px; overflow-y: auto;">
+                    {% for session_key, conversation in conversations.items() %}
+                    <div class="conversation-item border-bottom p-3 {% if conversation[-1].is_read %}bg-light{% else %}bg-warning bg-opacity-10{% endif %}"
+                         onclick="loadConversation('{{ session_key }}')" style="cursor: pointer;" data-session="{{ session_key }}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    {% if conversation[-1].sender_role == 'outsider' %}
+                                    <i class="bi bi-person-circle me-2 text-primary"></i>
+                                    <span class="fw-bold">{{ conversation[-1].sender_name }}</span>
+                                    <span class="badge bg-info ms-2">Customer</span>
+                                    {% elif conversation[-1].sender_role == 'admin' %}
+                                    <i class="bi bi-person-badge me-2 text-success"></i>
+                                    <span class="fw-bold">{{ conversation[-1].sender_name }}</span>
+                                    <span class="badge bg-success ms-2">Tenant</span>
+                                    {% else %}
+                                    <i class="bi bi-person-badge me-2 text-warning"></i>
+                                    <span class="fw-bold">{{ conversation[-1].sender_name }}</span>
+                                    <span class="badge bg-warning ms-2">{{ conversation[-1].sender_role|title }}</span>
+                                    {% endif %}
+                                    {% if not conversation[-1].is_read %}
+                                    <span class="badge bg-danger ms-2">New</span>
+                                    {% endif %}
+                                </div>
+                                <div class="small text-muted mb-1">
+                                    {{ conversation[-1].content[:50] }}{% if conversation[-1].content|length > 50 %}...{% endif %}
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock me-1"></i><span class="conversation-time">{{ conversation[-1].created_at }}</span>
+                                    </small>
+                                    {% if session_key.startswith('session_') %}
+                                    <small class="text-success">
+                                        <i class="bi bi-chat-dots me-1"></i>Public
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Chat Area -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-gradient-dark text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #212529, #343a40);">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-chat-fill me-2"></i>
+                        <div>
+                            <h6 class="mb-0" id="currentConversation">Select a conversation</h6>
+                            <small id="conversationStatus" class="opacity-75">Choose from the list</small>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-light" onclick="refreshCurrentConversation()" title="Refresh messages">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-light" onclick="toggleAutoRefresh()" id="autoRefreshBtn" title="Toggle auto-refresh">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-light" onclick="markCurrentAsRead()" title="Mark as read">
+                            <i class="bi bi-check-all"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Messages Area -->
+                    <div id="chatMessages" class="chat-messages" style="height: 400px; overflow-y: auto; padding: 20px; background-color: #f8f9fa;">
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-chat-dots fs-1 mb-3"></i>
+                            <p>Select a conversation to view and reply to messages</p>
+                            <small class="text-muted">Real-time updates will appear automatically</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Reply Input -->
+                    <div id="replyArea" class="message-input p-3 border-top bg-white" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-circle me-2 text-primary"></i>
+                                <span class="fw-bold" id="recipientName">Guest</span>
+                                <span id="recipientType" class="badge bg-info ms-2">Customer</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span id="typingIndicator" class="text-muted small" style="display: none;">
+                                    <i class="bi bi-three-dots"></i> Typing...
+                                </span>
+                                <span class="badge bg-success">Online</span>
+                            </div>
+                        </div>
+                        <form id="replyForm" class="d-flex gap-2">
+                            <input type="hidden" id="recipientId" value="">
+                            <input type="hidden" id="sessionId" value="">
+                            <div class="flex-grow-1">
+                                <textarea id="replyInput" class="form-control" 
+                                         placeholder="Type your response..." maxlength="1000" rows="2" required></textarea>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <small class="text-muted">
+                                        <span id="charCount">0</span>/1000 characters
+                                    </small>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="insertTemplate('greeting')" title="Insert greeting">
+                                            <i class="bi bi-hand-wave"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="insertTemplate('help')" title="Insert help message">
+                                            <i class="bi bi-question-circle"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="insertTemplate('thanks')" title="Insert thanks">
+                                            <i class="bi bi-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-column gap-1">
+                                <button type="submit" class="btn btn-primary" id="sendBtn">
+                                    <i class="bi bi-send"></i> Send
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearReply()">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .chat-messages {
+        scrollbar-width: thin;
+    }
+    
+    .message-bubble {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .sent .message-bubble {
+        border-bottom-right-radius: 0.5rem !important;
+    }
+    
+    .received .message-bubble {
+        border-bottom-left-radius: 0.5rem !important;
+    }
+    
+    .conversation-item:hover {
+        background-color: #e9ecef !important;
+    }
+    
+    .conversation-item {
+        transition: background-color 0.2s ease;
+    }
+</style>
+
+<script>
+// Advanced Chat Dashboard JavaScript
+let currentConversation = null;
+let currentMessages = [];
+let autoRefreshInterval = null;
+let autoRefreshEnabled = true;
+
+// Make conversations data available to JavaScript
+const conversations = {{ conversations|tojson|safe }};
+
+// Message templates
+const templates = {
+    greeting: "Hello! Thank you for contacting Africa SPA System support. How can I help you today?",
+    help: "I'm here to help! Could you please provide more details about the issue you're experiencing?",
+    thanks: "Thank you for your patience! I'll do my best to assist you with this matter."
+};
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    // Format conversation times
+    document.querySelectorAll('.conversation-time').forEach(element => {
+        const timeString = element.textContent;
+        const date = new Date(timeString);
+        element.textContent = date.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+    });
+    
+    // Start auto-refresh
+    startAutoRefresh();
+    
+    // Character counter
+    document.getElementById('replyInput')?.addEventListener('input', function() {
+        const charCount = this.value.length;
+        document.getElementById('charCount').textContent = charCount;
+    });
+    
+    // Highlight active conversation
+    updateConversationHighlight();
+});
+
+function loadConversation(sessionKey) {
+    currentConversation = sessionKey;
+    
+    // Update header and status
+    const conversation = conversations[sessionKey];
+    const lastMessage = conversation[conversation.length - 1];
+    
+    document.getElementById('currentConversation').textContent = lastMessage.sender_name;
+    document.getElementById('conversationStatus').textContent = 
+        lastMessage.sender_role === 'outsider' ? 'Customer Support' : 'Internal Communication';
+    
+    // Update recipient info
+    document.getElementById('recipientName').textContent = lastMessage.sender_name;
+    const recipientType = document.getElementById('recipientType');
+    recipientType.textContent = lastMessage.sender_role === 'outsider' ? 'Customer' : 
+                           lastMessage.sender_role === 'admin' ? 'Tenant' : lastMessage.sender_role;
+    recipientType.className = 'badge ms-2 ' + 
+        (lastMessage.sender_role === 'outsider' ? 'bg-info' : 
+         lastMessage.sender_role === 'admin' ? 'bg-success' : 'bg-warning');
+    
+    document.getElementById('recipientId').value = 
+        sessionKey.startsWith('session_') ? sessionKey : lastMessage.sender_id;
+    document.getElementById('sessionId').value = sessionKey.startsWith('session_') ? sessionKey : '';
+    
+    // Show reply area
+    document.getElementById('replyArea').style.display = 'block';
+    
+    // Load messages
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.innerHTML = '';
+    
+    conversation.forEach(msg => {
+        addMessageToChat(msg, msg.sender_role === 'superadmin');
+    });
+    
+    // Show reply area
+    document.getElementById('replyArea').style.display = 'block';
+    
+    // Scroll to bottom
+    scrollToBottom();
+    
+    // Mark messages as read
+    markMessagesAsRead(sessionKey);
+}
+
+function addMessageToChat(message, isSent) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message mb-3 ' + (isSent ? 'sent' : 'received');
+    
+    const time = new Date(message.created_at).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+    
+    messageDiv.innerHTML = `
+        <div class="d-flex ${isSent ? 'justify-content-end' : 'justify-content-start'}">
+            <div class="message-bubble ${isSent ? 'bg-primary text-white' : 'bg-white border'} p-3 rounded-3" style="max-width: 70%;">
+                <div class="small fw-bold mb-1">
+                    ${message.sender_name}
+                    <span class="text-muted ms-2">${time}</span>
+                    ${message.sender_role === 'outsider' ? '<i class="bi bi-person-circle ms-2"></i>' : ''}
+                    ${message.sender_role === 'admin' ? '<i class="bi bi-person-badge ms-2"></i>' : ''}
+                </div>
+                <div>${message.content}</div>
+            </div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Advanced functions
+function startAutoRefresh() {
+    if (autoRefreshEnabled && !autoRefreshInterval) {
+        autoRefreshInterval = setInterval(() => {
+            refreshConversations();
+            if (currentConversation) {
+                refreshCurrentConversation();
+            }
+        }, 5000); // Refresh every 5 seconds
+        
+        document.getElementById('autoRefreshBtn').classList.add('active');
+    }
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+        document.getElementById('autoRefreshBtn').classList.remove('active');
+    }
+}
+
+function toggleAutoRefresh() {
+    autoRefreshEnabled = !autoRefreshEnabled;
+    if (autoRefreshEnabled) {
+        startAutoRefresh();
+    } else {
+        stopAutoRefresh();
+    }
+}
+
+function refreshConversations() {
+    fetch('/superadmin/chat/data')
+        .then(response => response.json())
+        .then(data => {
+            // Update conversations data
+            window.conversations = data.conversations;
+            
+            // Update conversation count
+            const count = Object.keys(data.conversations).length;
+            document.getElementById('conversationCount').textContent = count;
+            
+            // Update conversation highlight
+            updateConversationHighlight();
+        })
+        .catch(error => console.error('Error refreshing conversations:', error));
+}
+
+function refreshCurrentConversation() {
+    if (currentConversation) {
+        // Only refresh conversation list, not the current chat
+        refreshConversations();
+    }
+}
+
+function updateConversationCount() {
+    const count = document.querySelectorAll('.conversation-item').length;
+    document.getElementById('conversationCount').textContent = count;
+}
+
+function updateConversationHighlight() {
+    // Remove existing highlights
+    document.querySelectorAll('.conversation-item').forEach(item => {
+        item.classList.remove('border-primary', 'border-2');
+    });
+    
+    // Highlight current conversation
+    if (currentConversation) {
+        const currentItem = document.querySelector(`[data-session="${currentConversation}"]`);
+        if (currentItem) {
+            currentItem.classList.add('border-primary', 'border-2');
+        }
+    }
+}
+
+function insertTemplate(type) {
+    const template = templates[type];
+    const replyInput = document.getElementById('replyInput');
+    
+    if (template) {
+        replyInput.value = template;
+        replyInput.focus();
+        
+        // Update character count
+        document.getElementById('charCount').textContent = template.length;
+    }
+}
+
+function clearReply() {
+    document.getElementById('replyInput').value = '';
+    document.getElementById('charCount').textContent = '0';
+    document.getElementById('replyInput').focus();
+}
+
+function markCurrentAsRead() {
+    if (currentConversation) {
+        markMessagesAsRead(currentConversation);
+        refreshConversations();
+    }
+}
+
+function markAllAsRead() {
+    fetch('/superadmin/chat/mark-all-read', {method: 'POST'})
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                refreshConversations();
+            }
+        })
+        .catch(error => console.error('Error marking all as read:', error));
+}
+
+document.getElementById('replyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const replyInput = document.getElementById('replyInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const content = replyInput.value.trim();
+    
+    if (!content) return;
+    
+    // Disable form
+    replyInput.disabled = true;
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
+    
+    // Send reply
+    fetch('{{ url_for("superadmin.send_chat_reply") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            recipient_id: document.getElementById('recipientId').value,
+            session_id: document.getElementById('sessionId').value,
+            message: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Add message to chat
+            addMessageToChat(data.message, true);
+            
+            // Clear input
+            replyInput.value = '';
+            
+            // Scroll to bottom
+            scrollToBottom();
+            
+            // Refresh conversation after a short delay to include the new message
+            setTimeout(() => {
+                refreshCurrentConversation();
+            }, 1000);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to send message');
+    })
+    .finally(() => {
+        // Re-enable form
+        replyInput.disabled = false;
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="bi bi-send"></i> Send';
+        replyInput.focus();
+    });
+});
+
+function refreshCurrentConversation() {
+    if (currentConversation) {
+        loadConversation(currentConversation);
+    }
+}
+
+function markAllAsRead() {
+    // Mark all messages as read
+    fetch('{{ url_for("superadmin.chat_dashboard") }}', {
+        method: 'GET'
+    }).then(() => {
+        location.reload();
+    });
+}
+
+function markMessagesAsRead(sessionKey) {
+    const conversation = conversations[sessionKey];
+    const currentUserId = {{ current_user.id }};
+    conversation.forEach(msg => {
+        if (msg.recipient_id === currentUserId && !msg.is_read) {
+            fetch(`{{ url_for("superadmin.mark_message_read", message_id=0) }}`.replace('0', msg.id), {
+                method: 'POST'
+            });
+            msg.is_read = true;
+        }
+    });
+}
+
+// Auto-refresh conversations every 30 seconds
+setInterval(() => {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

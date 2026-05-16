@@ -1,0 +1,201 @@
+{% extends "superadmin/superadmin_base.html" %}
+
+{% block title %}Manage Salons - Super Admin{% endblock %}
+
+{% set page_title = '🏢 Manage Salons' %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-muted mb-0">System-wide Salon Management</p>
+        </div>
+        <div>
+            <a href="{{ url_for('superadmin.create_salon') }}" class="btn btn-primary me-2">
+                <i class="fas fa-plus-circle"></i> Create New Salon
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-8">
+                    <label for="search" class="form-label">Search Salons</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search }}" placeholder="Search by name, email, or slug...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Salons Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                All Salons 
+                {% if search %}
+                <small class="text-muted">(Search: "{{ search }}")</small>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if salons.items %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Salon Information</th>
+                            <th>Contact</th>
+                            <th>Country</th>
+                            <th>Status</th>
+                            <th>Statistics</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for salon in salons.items %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if salon.logo_url %}
+                                    <img src="{{ salon.logo_url }}" alt="{{ salon.name }}" 
+                                         class="rounded-circle me-2" width="40" height="40">
+                                    {% else %}
+                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="fas fa-store"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ salon.name }}</strong><br>
+                                        <small class="text-muted">Slug: <code>{{ salon.slug }}</code></small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <i class="fas fa-envelope text-muted"></i> {{ salon.email }}<br>
+                                    <i class="fas fa-phone text-muted"></i> {{ salon.phone }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">
+                                    {% set country_flags = {'KE': '🇰🇪', 'NG': '🇳🇬', 'ZA': '🇿🇦', 'EG': '🇪🇬', 'GH': '🇬🇭', 'CM': '🇨🇲', 'CI': '🇨🇮', 'TZ': '🇹🇿', 'UG': '🇺🇬', 'US': '🇺🇸'} %}
+                                    {{ country_flags.get(salon.country|default('KE'), '🌍') }} {{ salon.country|default('KE') }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if salon.is_active else 'danger' }}">
+                                    {{ 'Active' if salon.is_active else 'Inactive' }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="small">
+                                    <div><strong>Branches:</strong> {{ salon.max_branches }}</div>
+                                    <div><strong>Staff:</strong> {{ salon.max_staff }}</div>
+                                </div>
+                            </td>
+                            <td>{{ salon.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('superadmin.view_salon', salon_id=salon.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-sm btn-outline-info" title="Edit Salon">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('superadmin.toggle_salon', salon_id=salon.id) }}" 
+                                       class="btn btn-sm btn-outline-{{ 'danger' if salon.is_active else 'success' }}" 
+                                       title="{{ 'Deactivate' if salon.is_active else 'Activate' }}">
+                                        <i class="fas fa-{{ 'ban' if salon.is_active else 'check' }}"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-sm btn-outline-danger" title="Delete Salon">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if salons.pages > 1 %}
+            <nav aria-label="Salons pagination">
+                <ul class="pagination justify-content-center">
+                    {% if salons.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('superadmin.manage_salons', page=salons.prev_num, search=search) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in salons.iter_pages() %}
+                    {% if page_num %}
+                    <li class="page-item {{ 'active' if page_num == salons.page else '' }}">
+                        <a class="page-link" href="{{ url_for('superadmin.manage_salons', page=page_num, search=search) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if salons.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('superadmin.manage_salons', page=salons.next_num, search=search) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h5>No salons found</h5>
+                {% if search %}
+                <p class="text-muted">No salons match your search criteria.</p>
+                {% else %}
+                <p class="text-muted">No salons have been registered yet.</p>
+                <a href="{{ url_for('superadmin.create_salon') }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Create First Salon
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+// Add search highlighting
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        searchInput.focus();
+    }
+});
+</script>
+{% endblock %}

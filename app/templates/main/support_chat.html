@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Support Chat | Africa SPA System{% endblock %}
+{% block meta_description %}Chat with Africa SPA System support team for instant help with your salon management needs.{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-gradient-primary text-white py-4">
+                        <div class="text-center">
+                            <h4 class="mb-2">
+                                <i class="bi bi-headset me-2"></i>Customer Support Chat
+                            </h4>
+                            <p class="mb-0">Get instant help from our support team</p>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Chat Messages -->
+                        <div id="chatMessages" class="chat-messages" style="height: 400px; overflow-y: auto; padding: 20px; background-color: #f8f9fa;">
+                            <div class="text-center text-muted mb-3">
+                                <i class="bi bi-chat-dots fs-1 mb-2"></i>
+                                <p>Start a conversation with our support team</p>
+                                <small class="text-muted">We typically respond within 5 minutes during business hours</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Visitor Info Form -->
+                        <div id="visitorForm" class="p-4 border-top bg-light">
+                            <h5 class="mb-3">Before we start, please tell us:</h5>
+                            <form id="visitorInfoForm" class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Your Name *</label>
+                                    <input type="text" name="name" class="form-control" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Email Address *</label>
+                                    <input type="email" name="email" class="form-control" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Phone Number</label>
+                                    <input type="tel" name="phone" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Business Type</label>
+                                    <select name="business_type" class="form-select">
+                                        <option value="">Select business type</option>
+                                        <option value="barbershop">Barbershop</option>
+                                        <option value="salon">Beauty Salon</option>
+                                        <option value="spa">Spa</option>
+                                        <option value="unisex">Unisex Salon</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">How can we help you? *</label>
+                                    <textarea name="initial_message" class="form-control" rows="3" required
+                                              placeholder="Briefly describe your question or issue..."></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-chat-dots me-2"></i>Start Chat
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Message Input (Hidden initially) -->
+                        <div id="messageInput" class="message-input p-3 border-top" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold">
+                                    <i class="bi bi-person-circle me-2"></i>
+                                    <span id="visitorName">Guest</span>
+                                </span>
+                                <span class="badge bg-success">Connected</span>
+                            </div>
+                            <form id="messageForm" class="d-flex gap-2">
+                                <input type="text" id="chatInput" class="form-control" 
+                                       placeholder="Type your message..." maxlength="500" required>
+                                <button type="submit" class="btn btn-primary" id="sendBtn">
+                                    <i class="bi bi-send"></i> Send
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Info Cards -->
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-light h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-clock text-primary fs-2 mb-2"></i>
+                                <h6 class="fw-bold">Response Time</h6>
+                                <p class="small text-muted mb-0">Usually within 5 minutes during business hours</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-light h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-shield-check text-success fs-2 mb-2"></i>
+                                <h6 class="fw-bold">Secure & Private</h6>
+                                <p class="small text-muted mb-0">Your conversations are encrypted and confidential</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-light h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-headset text-warning fs-2 mb-2"></i>
+                                <h6 class="fw-bold">Expert Support</h6>
+                                <p class="small text-muted mb-0">Trained professionals ready to help</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .chat-messages {
+        scrollbar-width: thin;
+    }
+    
+    .message-bubble {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .sent .message-bubble {
+        border-bottom-right-radius: 0.5rem !important;
+    }
+    
+    .received .message-bubble {
+        border-bottom-left-radius: 0.5rem !important;
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    }
+</style>
+
+<script>
+let visitorInfo = null;
+let sessionId = null;
+
+document.getElementById('visitorInfoForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    visitorInfo = Object.fromEntries(formData);
+    
+    // Generate session ID
+    sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    // Send initial message
+    sendInitialMessage();
+    
+    // Hide visitor form and show chat input
+    document.getElementById('visitorForm').style.display = 'none';
+    document.getElementById('messageInput').style.display = 'block';
+    document.getElementById('visitorName').textContent = visitorInfo.name;
+    
+    // Add welcome message
+    addMessageToChat({
+        content: `Hello ${visitorInfo.name}! Thank you for contacting Africa SPA System support. How can I help you today?`,
+        sender_name: 'Support Agent',
+        created_at: new Date().toISOString(),
+        is_system: true
+    }, false);
+    
+    // Focus on input
+    document.getElementById('chatInput').focus();
+});
+
+function sendInitialMessage() {
+    const initialMessage = `${visitorInfo.business_type || 'Customer'}: ${visitorInfo.initial_message}`;
+    
+    fetch('/public-chat/send', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: visitorInfo.name,
+            email: visitorInfo.email,
+            phone: visitorInfo.phone,
+            message: initialMessage,
+            session_id: sessionId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            addMessageToChat({
+                content: visitorInfo.initial_message,
+                sender_name: visitorInfo.name,
+                created_at: new Date().toISOString()
+            }, true);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+document.getElementById('messageForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const content = chatInput.value.trim();
+    
+    if (!content) return;
+    
+    // Disable form
+    chatInput.disabled = true;
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
+    
+    // Send message
+    fetch('/public-chat/send', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: visitorInfo.name,
+            email: visitorInfo.email,
+            phone: visitorInfo.phone,
+            message: content,
+            session_id: sessionId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Add message to chat
+            addMessageToChat({
+                content: content,
+                sender_name: visitorInfo.name,
+                created_at: new Date().toISOString()
+            }, true);
+            
+            // Clear input
+            chatInput.value = '';
+            
+            // Scroll to bottom
+            scrollToBottom();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to send message');
+    })
+    .finally(() => {
+        // Re-enable form
+        chatInput.disabled = false;
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="bi bi-send"></i> Send';
+        chatInput.focus();
+    });
+});
+
+function addMessageToChat(message, isSent) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message mb-3 ' + (isSent ? 'sent' : 'received');
+    
+    if (message.is_system) {
+        messageDiv.innerHTML = `
+            <div class="text-center">
+                <div class="alert alert-info d-inline-block">
+                    <small>${message.content}</small>
+                </div>
+            </div>
+        `;
+    } else {
+        messageDiv.innerHTML = `
+            <div class="d-flex ${isSent ? 'justify-content-end' : 'justify-content-start'}">
+                <div class="message-bubble ${isSent ? 'bg-primary text-white' : 'bg-light'} p-3 rounded-3" style="max-width: 70%;">
+                    <div class="small fw-bold mb-1">
+                        ${message.sender_name}
+                        <span class="text-muted ms-2">${new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div>${message.content}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    chatMessages.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Check for new messages every 10 seconds
+setInterval(() => {
+    if (sessionId && visitorInfo) {
+        fetch('/public-chat/check/' + sessionId)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.messages) {
+                data.messages.forEach(msg => {
+                    addMessageToChat(msg, false);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error checking messages:', error);
+        });
+    }
+}, 10000);
+</script>
+{% endblock %}

@@ -1,0 +1,272 @@
+{% extends "accountant/accountant_base.html" %}
+
+{% block accountant_content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <!-- Dynamic Target Group Deductions -->
+            {% for group in target_groups %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-{{ group.color }} text-white py-3">
+                    <h5 class="mb-0 small text-uppercase fw-bold">
+                        <i class="{{ group.icon }} me-2"></i>{{ group.name }} Deductions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4 p-3 bg-light rounded border-start border-4 border-{{ group.color }}">
+                        <div class="small text-muted text-uppercase fw-bold">Total Deductions</div>
+                        <h4 class="fw-bold text-dark mb-0">KSh {{ "{:,.2f}".format(group_totals[group.name]) }}</h4>
+                    </div>
+
+                    <div class="mb-4 p-3 bg-light rounded border-start border-4 border-danger">
+                        <div class="small text-muted text-uppercase fw-bold">Per Person Hit</div>
+                        <h3 class="fw-bold text-danger mb-0">KSh {{ "{:,.2f}".format(group_per_person[group.name]) }}</h3>
+                        <p class="text-muted extra-small mt-1 mb-0">Total ÷ {{ group.workers|length }} {{ group.name }}</p>
+                    </div>
+
+                    <div class="small text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Applies to: {{ group.workers|length }} {{ group.name|lower }}
+                        {% if group.specialties %}
+                        ({{ group.specialties|join(', ') }})
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-calculator me-2 text-primary"></i>Record Specialized Bulk Supply</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" class="row g-3" id="backBarForm">
+                        <input type="hidden" name="action" value="add_mandatory">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold">Product Description (e.g., Braiding Gel, Olive Spray)</label>
+                            <input type="text" name="product_name" class="form-control" placeholder="Identify the supply..." required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Target Group</label>
+                            <select name="backbar_group_id" class="form-select" id="backbarGroupId" onchange="updateTargetInfo()" required>
+                                {% for group in target_groups %}
+                                {% if group.name != 'Shop Staff' %}
+                                <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Inventory Type</label>
+                            <select name="inventory_type" class="form-select" id="inventoryType" onchange="updateTargetInfo()" required>
+                                <option value="salon">Salon Inventory</option>
+                                {% if has_internal_shop %}
+                                <option value="shop">Shop Inventory</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Quantity</label>
+                            <input type="number" name="qty" id="inputQty" class="form-control" value="1" min="1" oninput="updateCalculator()" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Unit Price (KSh)</label>
+                            <input type="number" name="unit_price" id="inputPrice" class="form-control" placeholder="500" oninput="updateCalculator()" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-primary">Item Total</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">KSh</span>
+                                <input type="number" id="inputTotal" class="form-control bg-light fw-bold" readonly>
+                            </div>
+                            <input type="hidden" name="total_amount" id="finalTotal">
+                        </div>
+                        
+                        <div class="col-12 mt-4 pt-3 border-top">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="text-muted small">
+                                    <i class="bi bi-info-circle me-1"></i> 
+                                    <span id="targetInfo">Cost is shared by eligible braiders.</span>
+                                </div>
+                                <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">
+                                    Confirm and Add to Total
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-person-dash me-2 text-danger"></i>Record Weekly Worker Deduction</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" class="row g-3">
+                        <input type="hidden" name="action" value="add_worker_deduction">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Salonist</label>
+                            <select name="worker_id" class="form-select js-select2" data-placeholder="Select salonist..." required>
+                                <option value="">Select salonist...</option>
+                                {% for worker in all_salonists %}
+                                <option value="{{ worker.id }}">{{ worker.full_name or worker.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Deduction Type</label>
+                            <select name="deduction_type" class="form-select js-select2" data-placeholder="Select deduction type..." required>
+                                <option value="inventory_damage">Inventory Damage</option>
+                                <option value="staff_purchase">Salon Product/Service to Salonist</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Amount (KSh)</label>
+                            <input type="number" name="amount" class="form-control" min="0" step="0.01" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Reason / Notes</label>
+                            <input type="text" name="reason" class="form-control" placeholder="Optional note for this deduction">
+                        </div>
+                        <div class="col-12 d-flex justify-content-end">
+                            <button type="submit" class="btn btn-danger px-4 fw-bold">Save Weekly Deduction</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold">Monthly Product Log (Last 30 Days)</h5>
+                </div>
+                <div class="table-responsive">
+                    <!-- Dynamic Group Deductions -->
+                    {% for group in target_groups %}
+                    <div class="mb-4">
+                        <h6 class="text-{{ group.color }} fw-bold mb-3"><i class="{{ group.icon }} me-2"></i>{{ group.name }} Deductions</h6>
+                        <table class="table align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="border-0 small fw-bold ps-4">Date</th>
+                                    <th class="border-0 small fw-bold">Product Item</th>
+                                    <th class="border-0 small fw-bold text-end pe-4">Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for d in group_deductions[group.name] %}
+                                <tr>
+                                    <td class="ps-4 small text-muted">{{ d.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td class="fw-bold">{{ d.product_name }}</td>
+                                    <td class="text-end fw-bold text-danger pe-4">KSh {{ "{:,.2f}".format(d.amount or 0) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-muted small">No {{ group.name|lower }} products recorded this period.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="2" class="fw-bold text-uppercase small ps-4">{{ group.name }} Total</td>
+                                    <td class="text-end fw-bold h6 mb-0 pe-4 text-{{ group.color }}">KSh {{ "{:,.2f}".format(group_totals[group.name]) }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Grand Total -->
+                    <div class="border-top pt-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold">Grand Total:</span>
+                                    <span class="h5 mb-0 text-dark">KSh {{ "{:,.2f}".format(group_totals.values()|sum) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold">Current Week Worker Deductions (Including Inventory Issues)</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="border-0 small fw-bold ps-4">Salonist</th>
+                                <th class="border-0 small fw-bold">Type</th>
+                                <th class="border-0 small fw-bold">Reason</th>
+                                <th class="border-0 small fw-bold text-end pe-4">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in staff_deductions %}
+                            <tr>
+                                <td class="ps-4 fw-bold">{{ d.worker.full_name if d.worker else ('Worker #' ~ d.worker_id) }}</td>
+                                <td class="small text-uppercase">{{ d.deduction_type.replace('_', ' ') }}</td>
+                                <td class="small text-muted">{{ d.reason or d.product_name or '-' }}</td>
+                                <td class="text-end fw-bold text-danger pe-4">KSh {{ "{:,.2f}".format(d.amount or 0) }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted small">No worker deductions added for this week.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .extra-small { font-size: 0.75rem; }
+    .bg-soft-success { background-color: rgba(25, 135, 84, 0.1); }
+</style>
+
+<script>
+/**
+ * Calculates individual product totals (Qty * Unit Price)
+ * and updates the hidden field sent to the server.
+ */
+function updateCalculator() {
+    const qty = parseFloat(document.getElementById('inputQty').value) || 0;
+    const price = parseFloat(document.getElementById('inputPrice').value) || 0;
+    const total = qty * price;
+    
+    document.getElementById('inputTotal').value = total.toFixed(2);
+    document.getElementById('finalTotal').value = total;
+}
+
+/**
+ * Updates the target information based on inventory type selection
+ */
+function updateTargetInfo() {
+    const backbarGroupId = document.getElementById('backbarGroupId').value;
+    const inventoryType = document.getElementById('inventoryType').value;
+    const targetInfo = document.getElementById('targetInfo');
+    
+    if (inventoryType === 'shop') {
+        targetInfo.textContent = 'Cost is shared by eligible shop workers.';
+    } else {
+        // Get the target group text from the select option
+        const backbarGroupSelect = document.getElementById('backbarGroupId');
+        const selectedOption = backbarGroupSelect.options[backbarGroupSelect.selectedIndex];
+        targetInfo.textContent = `Cost is shared by eligible ${selectedOption.text.toLowerCase()}.`;
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateCalculator();
+    updateTargetInfo();
+});
+</script>
+{% endblock %}

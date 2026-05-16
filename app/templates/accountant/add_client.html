@@ -1,0 +1,118 @@
+{% extends "accountant/accountant_base.html" %}
+
+{% block accountant_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-8">
+        <div class="mb-4">
+            <h2 class="h4 fw-bold text-dark">Client Registration</h2>
+            <p class="text-muted small">Register new clients to the {{ current_user.branch }} branch database.</p>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary-soft text-primary rounded-circle p-2 me-3">
+                        <i class="bi bi-person-plus-fill fs-5"></i>
+                    </div>
+                    <h5 class="mb-0 fw-bold">Basic Information</h5>
+                </div>
+            </div>
+            
+            <div class="card-body p-4 p-md-5">
+                <form method="POST" class="needs-validation" novalidate>
+                    <div class="row g-4">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-uppercase text-muted">Full Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-person"></i></span>
+                                <input type="text" name="full_name" class="form-control bg-light border-start-0 py-2" 
+                                       placeholder="e.g. Jane Mary Doe" required>
+                                <div class="invalid-feedback">Please provide the client's name.</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-uppercase text-muted">Phone Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-telephone"></i></span>
+                                <input type="tel" name="phone" class="form-control bg-light border-start-0 py-2" 
+                                       placeholder="0712345678" pattern="[0-9]{10}">
+                            </div>
+                            <div class="form-text text-xs">Used for appointment SMS notifications.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-uppercase text-muted">Email Address (Optional)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope"></i></span>
+                                <input type="email" name="email" class="form-control bg-light border-start-0 py-2" 
+                                       placeholder="jane@example.com">
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="p-3 rounded bg-light border-start border-primary border-4">
+                                <div class="d-flex">
+                                    <i class="bi bi-info-circle-fill text-primary me-2"></i>
+                                    <p class="mb-0 small text-dark">
+                                        This client will be tagged to the <strong>{{ current_user.branch }}</strong> branch automatically.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <div class="d-flex flex-column flex-md-row gap-2">
+                                <button type="submit" class="btn btn-primary px-5 py-2 fw-bold flex-grow-1">
+                                    <i class="bi bi-check-lg me-2"></i>Register Client
+                                </button>
+                                <a href="{{ url_for('accountant.dashboard') }}" class="btn btn-outline-secondary px-4 py-2">
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="mt-4 text-center">
+            <p class="text-muted small">Need to record a service for an existing client? 
+                <a href="{{ url_for('accountant.record_work') }}" class="text-primary fw-bold text-decoration-none">Go to Record Work</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-primary-soft { background-color: rgba(13, 110, 253, 0.1); }
+    .text-xs { font-size: 0.75rem; }
+    
+    .form-control:focus {
+        background-color: #fff !important;
+        border-color: #0d6efd;
+        box-shadow: none;
+    }
+    
+    .input-group-text {
+        color: #6c757d;
+    }
+</style>
+
+<script>
+    // Example Bootstrap starter JavaScript for disabling form submissions if there are invalid fields
+    (function () {
+      'use strict'
+      var forms = document.querySelectorAll('.needs-validation')
+      Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+          if (!form.checkValidity()) {
+            event.preventDefault()
+            event.stopPropagation()
+          }
+          form.classList.add('was-validated')
+        }, false)
+      })
+    })()
+</script>
+{% endblock %}

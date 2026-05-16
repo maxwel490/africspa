@@ -1,0 +1,262 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-0">
+                <i class="bi bi-person-circle me-2 text-info"></i>Edit Profile Settings
+            </h1>
+            <p class="text-muted mb-0">Update your personal account information and password</p>
+        </div>
+        <a href="{{ url_for('admin.salon_settings') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Settings
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-info text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-gear me-2"></i>Personal Information
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Username</label>
+                            <input type="text" name="username" id="editProfileUsername" class="form-control" value="{{ current_user.username }}" required>
+                            <div id="usernameSuggestions" class="mt-2" style="display: none;"></div>
+                            <div class="form-text">This is your unique login identifier</div>
+                        </div>
+
+                        <hr class="my-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-lock-fill fs-4 text-warning me-3"></i>
+                            <div>
+                                <h6 class="mb-0">Change Password</h6>
+                                <p class="text-muted small mb-0">Leave blank if you don't want to change your password</p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">New Password</label>
+                                    <div class="input-group">
+                                        <input type="password" name="new_password" class="form-control text-success" id="new_password" autocomplete="new-password" placeholder="Enter new password" style="color: #198754;">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('new_password')">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Strong password required (see requirements below)</div>
+                                    
+                                    <!-- Password Strength Indicator -->
+                                    {% include 'components/password_strength.html' %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Confirm New Password</label>
+                                    <div class="input-group">
+                                        <input type="password" name="confirm_password" class="form-control text-success" id="confirm_password" autocomplete="new-password" placeholder="Confirm new password" style="color: #198754;">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirm_password')">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Save Changes
+                            </button>
+                            <a href="{{ url_for('admin.salon_settings') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Profile Overview Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-badge me-2"></i>Current Profile
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="avatar-circle bg-info text-white d-inline-flex align-items-center justify-content-center rounded-circle mb-2" style="width: 80px; height: 80px; font-size: 32px;">
+                            {{ current_user.username[0]|upper }}
+                        </div>
+                        <h6 class="mb-1">{{ current_user.full_name or current_user.username }}</h6>
+                        <span class="badge bg-info">{{ current_user.role|title }}</span>
+                    </div>
+
+                    <div class="small text-muted">
+                        <div class="mb-2">
+                            <strong>Username:</strong> {{ current_user.username }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Email:</strong> {{ current_user.email or 'Not set' }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Phone:</strong> {{ current_user.phone or 'Not set' }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Branch:</strong> {{ current_user.branch or 'All Branches' }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Salon ID:</strong> {{ current_user.salon_id or 'Not assigned' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Tips -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shield-check me-2"></i>Security Tips
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="small text-muted mb-0">
+                        <li class="mb-2">Use a strong password with at least 8 characters</li>
+                        <li class="mb-2">Include numbers, letters, and special characters</li>
+                        <li class="mb-2">Don't share your login credentials</li>
+                        <li class="mb-0">Update your password regularly</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Google-style green password dots */
+input[type="password"] {
+    color: #198754 !important;
+    caret-color: #198754 !important;
+}
+
+input[type="password"]::placeholder {
+    color: #6c757d !important;
+}
+
+/* Ensure password dots are green */
+input[type="password"]::-webkit-text-security {
+    color: #198754 !important;
+}
+
+input[type="password"]::-moz-text-security {
+    color: #198754 !important;
+}
+</style>
+
+<script>
+// Real-time username validation with debouncing to prevent system crashes
+let usernameCheckTimeout;
+document.getElementById('editProfileUsername')?.addEventListener('input', function() {
+    const username = this.value.trim();
+    const usernameField = this;
+    const suggestionsContainer = document.getElementById('usernameSuggestions');
+    const currentUsername = '{{ current_user.username }}'; // Current username to exclude from check
+    
+    // Clear previous timeout to prevent excessive requests
+    clearTimeout(usernameCheckTimeout);
+    
+    // Clear validation state immediately for better UX
+    usernameField.classList.remove('is-invalid', 'is-valid');
+    suggestionsContainer.style.display = 'none';
+    suggestionsContainer.innerHTML = '';
+    
+    // Only check if username is valid length and different from current
+    if (username.length >= 3 && username !== currentUsername) {
+        // Add loading state
+        usernameField.classList.add('is-loading');
+        
+        // Debounce the request to prevent system overload
+        usernameCheckTimeout = setTimeout(() => {
+            // Check username availability via AJAX with error handling
+            fetch(`/admin/check-username?username=${encodeURIComponent(username)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Remove loading state
+                    usernameField.classList.remove('is-loading');
+                    
+                    if (data.available) {
+                        usernameField.classList.add('is-valid');
+                        usernameField.classList.remove('is-invalid');
+                    } else {
+                        usernameField.classList.add('is-invalid');
+                        usernameField.classList.remove('is-valid');
+                        
+                        // Show Google-style suggestions if available
+                        if (data.suggestions && data.suggestions.length > 0) {
+                            suggestionsContainer.style.display = 'block';
+                            suggestionsContainer.innerHTML = `
+                                <div class="text-muted small mb-1">This username is taken. You can use:</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    ${data.suggestions.slice(0, 3).map(suggestion => `
+                                        <button type="button" class="btn btn-sm btn-outline-success username-suggestion" 
+                                                style="color: #198754; border-color: #198754; font-weight: 500;"
+                                                onclick="selectUsernameProfile('${suggestion}')">
+                                            ${suggestion}
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            `;
+                        }
+                    }
+                })
+                .catch(error => {
+                    // Remove loading state
+                    usernameField.classList.remove('is-loading');
+                    
+                    // Don't show error to user, just fail silently to prevent crashes
+                });
+        }, 500); // 500ms debounce delay
+    }
+});
+
+// Function to select a suggested username for admin edit profile
+function selectUsernameProfile(username) {
+    const usernameField = document.getElementById('editProfileUsername');
+    const suggestionsContainer = document.getElementById('usernameSuggestions');
+    
+    usernameField.value = username;
+    usernameField.classList.add('is-valid');
+    usernameField.classList.remove('is-invalid');
+    suggestionsContainer.style.display = 'none';
+    suggestionsContainer.innerHTML = '';
+}
+
+// Password toggle function (like create_salon.html)
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = field.nextElementSibling.querySelector('i');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    }
+}
+</script>
+{% endblock %}

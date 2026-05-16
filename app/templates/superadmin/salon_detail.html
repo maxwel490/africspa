@@ -1,0 +1,222 @@
+{% extends "superadmin/superadmin_base.html" %}
+
+{% block title %}{{ salon.name }} - Salon Details{% endblock %}
+
+{% set page_title = salon.name + ' - Salon Details' %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-muted mb-0">Salon Management Dashboard</p>
+        </div>
+        <div>
+            <a href="{{ url_for('superadmin.manage_salons') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Salons
+            </a>
+        </div>
+    </div>
+
+    <!-- Salon Info Cards -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Salon Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Salon Name</label>
+                                <p class="form-control-plaintext">{{ salon.name }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Slug</label>
+                                <p class="form-control-plaintext"><code>{{ salon.slug }}</code></p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <p class="form-control-plaintext">{{ salon.email }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone</label>
+                                <p class="form-control-plaintext">{{ salon.phone }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Address</label>
+                                <p class="form-control-plaintext">{{ salon.address or 'Not provided' }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Country</label>
+                                <p class="form-control-plaintext">
+                                    <span class="badge bg-info">
+                                        {% set country_flags = {'KE': '🇰🇪', 'NG': '🇳🇬', 'ZA': '🇿🇦', 'EG': '🇪🇬', 'GH': '🇬🇭', 'CM': '🇨🇲', 'CI': '🇨🇮', 'TZ': '🇹🇿', 'UG': '🇺🇬', 'US': '🇺🇸'} %}
+                                        {{ country_flags.get(salon.country|default('KE'), '🌍') }} {{ salon.country|default('KE') }}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <p class="form-control-plaintext">
+                                    <span class="badge bg-{{ 'success' if salon.is_active else 'danger' }}">
+                                        {{ 'Active' if salon.is_active else 'Inactive' }}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Created</label>
+                                <p class="form-control-plaintext">{{ salon.created_at.strftime('%B %d, %Y') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-edit"></i> Edit Salon
+                        </a>
+                        <a href="{{ url_for('superadmin.toggle_salon', salon_id=salon.id) }}" 
+                           class="btn btn-outline-{{ 'danger' if salon.is_active else 'success' }} w-100">
+                            <i class="fas fa-{{ 'ban' if salon.is_active else 'check' }}"></i> 
+                            {{ 'Deactivate' if salon.is_active else 'Activate' }}
+                        </a>
+                        <a href="#" class="btn btn-outline-info w-100">
+                            <i class="fas fa-key"></i> Reset Password
+                        </a>
+                        <a href="#" class="btn btn-outline-warning w-100">
+                            <i class="fas fa-credit-card"></i> Billing
+                        </a>
+                        <a href="#" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-download"></i> Export Data
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Logo -->
+            {% if salon.logo_url %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Salon Logo</h6>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{{ salon.logo_url }}" alt="{{ salon.name }}" 
+                         class="img-fluid rounded" style="max-height: 150px;">
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-code-branch fa-2x mb-2"></i>
+                    <h4 class="card-title">{{ branches_count }}</h4>
+                    <p class="card-text">Branches</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <h4 class="card-title">{{ workers_count }}</h4>
+                    <p class="card-text">Staff Members</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-friends fa-2x mb-2"></i>
+                    <h4 class="card-title">{{ clients_count }}</h4>
+                    <p class="card-text">Clients</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-check fa-2x mb-2"></i>
+                    <h4 class="card-title">{{ appointments_count }}</h4>
+                    <p class="card-text">Appointments</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Recent Appointments</h5>
+        </div>
+        <div class="card-body">
+            {% if recent_appointments %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Client</th>
+                            <th>Service</th>
+                            <th>Staff</th>
+                            <th>Branch</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in recent_appointments %}
+                        <tr>
+                            <td>{{ appointment.appointment_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ appointment.customer.full_name if appointment.customer else 'Walk-in' }}</td>
+                            <td>{{ appointment.service_type }}</td>
+                            <td>{{ appointment.worker.full_name }}</td>
+                            <td>{{ appointment.branch }}</td>
+                            <td>
+                                <span class="badge bg-{{ 
+                                    'success' if appointment.status == 'Completed' else 
+                                    'warning' if appointment.status == 'Scheduled' else 
+                                    'danger' if appointment.status == 'Cancelled' else 'secondary' 
+                                }}">
+                                    {{ appointment.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-calendar fa-2x text-muted mb-3"></i>
+                <p class="text-muted">No recent appointments found</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+// Auto-refresh recent activity every 60 seconds
+setInterval(function() {
+    location.reload();
+}, 60000);
+</script>
+{% endblock %}

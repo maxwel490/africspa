@@ -1,0 +1,227 @@
+{% extends "superadmin/superadmin_base.html" %}
+
+{% block title %}Payment Settings - Super Admin{% endblock %}
+
+{% set page_title = '💳 Payment Configuration' %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{{ url_for('superadmin.settings') }}">Settings</a></li>
+            <li class="breadcrumb-item active">Payment Configuration</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-muted mb-0">Configure payment gateway API keys and settings</p>
+        </div>
+    </div>
+
+    <form method="POST">
+        <!-- Test Mode Toggle -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-warning text-dark py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-toggle-on me-2"></i>Payment Mode
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="enable_test_mode" id="enable_test_mode"
+                           {% if payment_config.enable_test_mode %}checked{% endif %}>
+                    <label class="form-check-label fw-bold" for="enable_test_mode">
+                        Enable Test Mode
+                    </label>
+                    <div class="form-text">
+                        When enabled, all payments will use sandbox/test environments. Disable for live transactions.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Google Pay Settings -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-google me-2"></i>Google Pay
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Merchant ID</label>
+                            <input type="text" name="google_pay_merchant_id" class="form-control"
+                                   value="{{ payment_config.google_pay_merchant_id or '' }}"
+                                   placeholder="your-merchant-id">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Merchant Name</label>
+                            <input type="text" name="google_pay_merchant_name" class="form-control"
+                                   value="{{ payment_config.google_pay_merchant_name or 'Africa SPA System' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Environment</label>
+                            <select name="google_pay_environment" class="form-select">
+                                <option value="TEST" {% if payment_config.google_pay_environment == 'TEST' %}selected{% endif %}>TEST (Sandbox)</option>
+                                <option value="PRODUCTION" {% if payment_config.google_pay_environment == 'PRODUCTION' %}selected{% endif %}>PRODUCTION (Live)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stripe Settings -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-dark text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-credit-card me-2"></i>Stripe
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Publishable Key</label>
+                            <input type="text" name="stripe_publishable_key" class="form-control"
+                                   value="{{ payment_config.stripe_publishable_key or '' }}"
+                                   placeholder="pk_live_... or pk_test_...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Secret Key</label>
+                            <input type="password" name="stripe_secret_key" class="form-control"
+                                   placeholder="{% if payment_config.stripe_secret_key %}{{ payment_config.get_masked_secret('stripe_secret_key') }}{% else %}sk_live_... or sk_test_...{% endif %}">
+                            <div class="form-text">Leave blank to keep current value</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Webhook Secret</label>
+                            <input type="password" name="stripe_webhook_secret" class="form-control"
+                                   placeholder="{% if payment_config.stripe_webhook_secret %}{{ payment_config.get_masked_secret('stripe_webhook_secret') }}{% else %}whsec_...{% endif %}">
+                            <div class="form-text">Leave blank to keep current value</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- PayPal Settings -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-info text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-paypal me-2"></i>PayPal
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Client ID</label>
+                            <input type="text" name="paypal_client_id" class="form-control"
+                                   value="{{ payment_config.paypal_client_id or '' }}"
+                                   placeholder="Your PayPal Client ID">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Client Secret</label>
+                            <input type="password" name="paypal_client_secret" class="form-control"
+                                   placeholder="{% if payment_config.paypal_client_secret %}{{ payment_config.get_masked_secret('paypal_client_secret') }}{% else %}Your PayPal Client Secret{% endif %}">
+                            <div class="form-text">Leave blank to keep current value</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Environment</label>
+                            <select name="paypal_environment" class="form-select">
+                                <option value="sandbox" {% if payment_config.paypal_environment == 'sandbox' %}selected{% endif %}>Sandbox (Test)</option>
+                                <option value="live" {% if payment_config.paypal_environment == 'live' %}selected{% endif %}>Live (Production)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flutterwave Settings -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-globe-africa me-2"></i>Flutterwave
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Public Key</label>
+                            <input type="text" name="flutterwave_public_key" class="form-control"
+                                   value="{{ payment_config.flutterwave_public_key or '' }}"
+                                   placeholder="FLWPUBK-...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Secret Key</label>
+                            <input type="password" name="flutterwave_secret_key" class="form-control"
+                                   placeholder="{% if payment_config.flutterwave_secret_key %}{{ payment_config.get_masked_secret('flutterwave_secret_key') }}{% else %}FLWSECK-...{% endif %}">
+                            <div class="form-text">Leave blank to keep current value</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Encryption Key</label>
+                            <input type="password" name="flutterwave_encryption_key" class="form-control"
+                                   placeholder="{% if payment_config.flutterwave_encryption_key %}{{ payment_config.get_masked_secret('flutterwave_encryption_key') }}{% else %}Your Flutterwave Encryption Key{% endif %}">
+                            <div class="form-text">Leave blank to keep current value</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- M-Pesa Settings -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-danger text-white py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-phone me-2"></i>M-Pesa (Kenya)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Consumer Key</label>
+                            <input type="text" name="mpesa_consumer_key" class="form-control"
+                                   value="{{ payment_config.mpesa_consumer_key or '' }}"
+                                   placeholder="Your M-Pesa Consumer Key">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Consumer Secret</label>
+                            <input type="password" name="mpesa_consumer_secret" class="form-control"
+                                   placeholder="{% if payment_config.mpesa_consumer_secret %}{{ payment_config.get_masked_secret('mpesa_consumer_secret') }}{% else %}Your M-Pesa Consumer Secret{% endif %}">
+                            <div class="form-text">Leave blank to keep current value</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Shortcode</label>
+                            <input type="text" name="mpesa_shortcode" class="form-control"
+                                   value="{{ payment_config.mpesa_shortcode or '' }}"
+                                   placeholder="e.g., 174379">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Passkey</label>
+                            <input type="password" name="mpesa_passkey" class="form-control"
+                                   placeholder="{% if payment_config.mpesa_passkey %}{{ payment_config.get_masked_secret('mpesa_passkey') }}{% else %}Your M-Pesa Passkey{% endif %}">
+                            <div class="form-text">Leave blank to keep current value</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-save me-2"></i>Save Payment Settings
+            </button>
+            <a href="{{ url_for('superadmin.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

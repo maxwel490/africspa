@@ -1,0 +1,185 @@
+{% extends "accountant/accountant_base.html" %}
+
+{% block accountant_content %}
+<div class="container-fluid py-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 fw-bold text-dark mb-0">Inventory View</h2>
+            <p class="text-muted small mb-0">Current stock levels for {{ current_user.branch }} branch.</p>
+        </div>
+        <a href="{{ url_for('accountant.back_bar_management') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-scissors me-1"></i> View Back Bar Deductions
+        </a>
+        </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-box-arrow-in-down-right me-2 text-primary"></i>Issue Stock to Department / Salonist</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('accountant.inventory') }}" class="row g-3">
+                <input type="hidden" name="action" value="issue">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Product</label>
+                    <select name="product_id" class="form-select js-select2" data-placeholder="Select product..." required>
+                        <option value="">Select product...</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.name }} (KSh {{ "{:,.2f}".format(product.unit_price or 0) }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Issue Type</label>
+                    <select name="issue_type" id="issueTypeSelect" class="form-select js-select2" data-placeholder="Select issue type..." required>
+                        <option value="department">Department</option>
+                        <option value="individual">Individual Salonist</option>
+                    </select>
+                </div>
+                <div class="col-md-4" id="salonistFieldWrap">
+                    <label class="form-label small fw-bold">Salonist</label>
+                    <select name="worker_id" id="issueWorkerSelect" class="form-select js-select2" data-placeholder="Select salonist...">
+                        <option value="">No salonist selected (department issue)</option>
+                        {% for worker in workers if worker.role == 'salonist' %}
+                        <option value="{{ worker.id }}">{{ worker.full_name or worker.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Issue Dept</label>
+                    <select name="issue_department" id="issueDepartmentSelect" class="form-select js-select2" data-placeholder="Select department..." required>
+                        <option value="">Select...</option>
+                        <option value="Hair">Hair</option>
+                        <option value="Wash">Wash</option>
+                        <option value="Makeup">Makeup</option>
+                        <option value="Nails">Nails</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Quantity</label>
+                    <input type="number" name="quantity" class="form-control" min="1" value="1" required>
+                </div>
+                <div class="col-md-12 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary w-100">Issue</button>
+                </div>
+                <div class="col-12">
+                    <small class="text-muted">Hair department issues with unit price are auto-added to Cornrows/Braids monthly deductions and deducted in the 4th week of the month. Wash/Makeup/Nails issues are logged only.</small>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="bg-light text-uppercase small fw-bold text-muted">
+                    <tr>
+                        <th class="ps-4">Product / Category</th>
+                        <th>Dept</th>
+                        <th>Unit Price</th>
+                        <th>Current Balance</th> 
+                        </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ product.name }}</div>
+                            <span class="text-primary small">{{ product.category }}</span>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ product.department }}</span></td>
+                        <td>
+                            {% if product.department == 'Retail Shop' or product.category == 'Hair' %}
+                                <span class="fw-bold text-dark">KSh {{ "{:,.2f}".format(product.unit_price or 0) }}</span>
+                            {% else %}
+                                <span class="text-muted small italic">Internal Use</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if product.stock_quantity < 5 %}
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-danger rounded-pill px-3">{{ product.stock_quantity }}</span>
+                                    <small class="ms-2 text-danger fw-bold italic" style="font-size: 0.7rem;">LOW STOCK</small>
+                                </div>
+                            {% else %}
+                                <span class="badge bg-success rounded-pill px-3">{{ product.stock_quantity }}</span>
+                            {% endif %}
+                        </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-dark">Issued Items Log</h5>
+            <small class="text-muted">Last 20 internal issue records</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="bg-light text-uppercase small fw-bold text-muted">
+                    <tr>
+                        <th class="ps-4">Date</th>
+                        <th>Product</th>
+                        <th>Salonist</th>
+                        <th>Issue Dept</th>
+                        <th class="text-end">Qty</th>
+                        <th class="text-end">Total (KSh)</th>
+                        <th class="text-center pe-4">4th-Week Monthly Deduction</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in issued_logs %}
+                    <tr>
+                        <td class="ps-4 small text-muted">{{ log.timestamp.strftime('%Y-%m-%d %H:%M') if log.timestamp else '-' }}</td>
+                        <td class="fw-bold">{{ log.product_obj.name if log.product_obj else ('Product #' ~ log.product_id) }}</td>
+                        <td>{{ log.performed_by.full_name if log.performed_by else 'Not selected' }}</td>
+                        <td>{{ log.department or '-' }}</td>
+                        <td class="text-end">{{ log.quantity or 0 }}</td>
+                        <td class="text-end fw-semibold">{{ "{:,.2f}".format(log.total_amount or 0) }}</td>
+                        <td class="text-center pe-4">
+                            {% if (log.total_amount or 0) > 0 and (log.department or '') == 'Hair' %}
+                            <span class="badge bg-soft-success text-success border border-success">Yes</span>
+                            {% else %}
+                            <span class="badge bg-light text-muted border">No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted small">No issued item records yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const issueTypeSelect = document.getElementById('issueTypeSelect');
+    const salonistWrap = document.getElementById('salonistFieldWrap');
+    const salonistSelect = document.getElementById('issueWorkerSelect');
+
+    if (!issueTypeSelect || !salonistWrap || !salonistSelect) {
+        return;
+    }
+
+    function syncSalonistField() {
+        const isDepartmentIssue = issueTypeSelect.value === 'department';
+        salonistWrap.classList.toggle('d-none', isDepartmentIssue);
+        salonistSelect.disabled = isDepartmentIssue;
+        salonistSelect.required = !isDepartmentIssue;
+        if (isDepartmentIssue) {
+            salonistSelect.value = '';
+        }
+    }
+
+    issueTypeSelect.addEventListener('change', syncSalonistField);
+    syncSalonistField();
+});
+</script>
+
+{% endblock %}

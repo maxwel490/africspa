@@ -1,0 +1,227 @@
+{% extends "superadmin/superadmin_base.html" %}
+
+{% block title %}Contact Settings - Super Admin{% endblock %}
+
+{% set page_title = '📞 Contact Configuration' %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{{ url_for('superadmin.settings') }}">Settings</a></li>
+            <li class="breadcrumb-item active">Contact Information</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-muted mb-0">Configure company contact details, emails, phone numbers, and address</p>
+        </div>
+    </div>
+
+    <form method="POST">
+        <div class="row">
+            <!-- Email Addresses -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-envelope me-2"></i>Email Addresses
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Support Email</label>
+                            <input type="email" name="support_email" class="form-control"
+                                   value="{{ contact_config.support_email or '' }}"
+                                   placeholder="support@africspa.com">
+                            <div class="form-text">Primary support email for customer inquiries</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Billing Email</label>
+                            <input type="email" name="billing_email" class="form-control"
+                                   value="{{ contact_config.billing_email or '' }}"
+                                   placeholder="billing@africspa.com">
+                            <div class="form-text">Email for billing and payment questions</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Sales Email</label>
+                            <input type="email" name="sales_email" class="form-control"
+                                   value="{{ contact_config.sales_email or '' }}"
+                                   placeholder="sales@africspa.com">
+                            <div class="form-text">Email for sales and partnership inquiries</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Technical Email</label>
+                            <input type="email" name="technical_email" class="form-control"
+                                   value="{{ contact_config.technical_email or '' }}"
+                                   placeholder="tech@africspa.com">
+                            <div class="form-text">Email for technical issues and bug reports</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phone Numbers -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-telephone me-2"></i>Phone Numbers
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Support Phone</label>
+                            <input type="tel" name="support_phone" class="form-control"
+                                   value="{{ contact_config.support_phone or '' }}"
+                                   placeholder="+254 712 345 678">
+                            <div class="form-text">Main support phone number</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Sales Phone</label>
+                            <input type="tel" name="sales_phone" class="form-control"
+                                   value="{{ contact_config.sales_phone or '' }}"
+                                   placeholder="+254 723 456 789">
+                            <div class="form-text">Sales and business development phone</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">WhatsApp Number</label>
+                            <input type="tel" name="whatsapp_number" class="form-control"
+                                   value="{{ contact_config.whatsapp_number or '' }}"
+                                   placeholder="+254 712 345 678">
+                            <div class="form-text">WhatsApp number for instant messaging</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Company Address -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-info text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-building me-2"></i>Company Address
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Company Name</label>
+                            <input type="text" name="company_name" class="form-control"
+                                   value="{{ contact_config.company_name or 'Africa SPA System' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Address Line 1</label>
+                            <input type="text" name="address_line1" class="form-control"
+                                   value="{{ contact_config.address_line1 or '' }}"
+                                   placeholder="Street address, building name">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Address Line 2</label>
+                            <input type="text" name="address_line2" class="form-control"
+                                   value="{{ contact_config.address_line2 or '' }}"
+                                   placeholder="Apartment, suite, unit (optional)">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">City</label>
+                                <input type="text" name="city" class="form-control"
+                                       value="{{ contact_config.city or '' }}"
+                                       placeholder="Nairobi">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Postal Code</label>
+                                <input type="text" name="postal_code" class="form-control"
+                                       value="{{ contact_config.postal_code or '' }}"
+                                       placeholder="00100">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Country</label>
+                            <input type="text" name="country" class="form-control"
+                                   value="{{ contact_config.country or '' }}"
+                                   placeholder="Kenya">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Media Links -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-dark text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-share me-2"></i>Social Media & Web
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Website URL</label>
+                            <input type="url" name="website_url" class="form-control"
+                                   value="{{ contact_config.website_url or '' }}"
+                                   placeholder="https://africspa.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Facebook URL</label>
+                            <input type="url" name="facebook_url" class="form-control"
+                                   value="{{ contact_config.facebook_url or '' }}"
+                                   placeholder="https://facebook.com/africspa">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Twitter URL</label>
+                            <input type="url" name="twitter_url" class="form-control"
+                                   value="{{ contact_config.twitter_url or '' }}"
+                                   placeholder="https://twitter.com/africspa">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Instagram URL</label>
+                            <input type="url" name="instagram_url" class="form-control"
+                                   value="{{ contact_config.instagram_url or '' }}"
+                                   placeholder="https://instagram.com/africspa">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">LinkedIn URL</label>
+                            <input type="url" name="linkedin_url" class="form-control"
+                                   value="{{ contact_config.linkedin_url or '' }}"
+                                   placeholder="https://linkedin.com/company/africspa">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Business Hours -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-warning text-dark py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock me-2"></i>Business Hours
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Operating Hours</label>
+                    <textarea name="business_hours" class="form-control" rows="4"
+                              placeholder="Mon-Fri: 8:00 AM - 6:00 PM
+Sat: 9:00 AM - 4:00 PM
+Sun: Closed">{{ contact_config.business_hours or '' }}</textarea>
+                    <div class="form-text">Enter business hours (one line per day)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-save me-2"></i>Save Contact Settings
+            </button>
+            <a href="{{ url_for('superadmin.settings') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Back to Settings
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

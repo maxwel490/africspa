@@ -1,0 +1,147 @@
+{% extends "accountant/accountant_base.html" %}
+
+{% block accountant_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Branch Overview</h2>
+            <p class="text-muted">Monitoring activity for <strong>{{ current_user.branch }}</strong></p>
+        </div>
+        <div class="text-end">
+            <h5 class="mb-0 fw-bold text-dark">{{ now.strftime('%A, %b %d') }}</h5>
+            <span class="badge bg-success shadow-sm">System Active</span>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-dark text-white h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase small fw-bold opacity-75">Today's Revenue</h6>
+                    {# Added a fallback 0 for the format function to prevent crashes #}
+                    <h3 class="mb-0 fw-bold">KSh {{ "{:,.2f}".format(today_revenue or 0) }}</h3>
+                    <small class="text-secondary">Gross sales recorded today</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-3">Inventory Status</h6>
+                    <div class="d-flex flex-column gap-2">
+                        {% if low_stock_items %}
+                            {% for product in low_stock_items %}
+                            <div class="p-2 border rounded-3 d-flex justify-content-between align-items-center {% if product.stock_quantity < 5 %}bg-soft-danger border-danger{% else %}bg-soft-warning border-warning{% endif %}">
+                                <div>
+                                    <div class="fw-bold small text-dark">{{ product.name }}</div>
+                                    <div class="extra-small text-muted">{{ product.category }}</div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge {% if product.stock_quantity < 5 %}bg-danger{% else %}bg-warning text-dark{% endif %} shadow-sm">
+                                        {{ product.stock_quantity }} left
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="py-3 text-center">
+                                <i class="bi bi-shield-check text-success display-6"></i>
+                                <h5 class="text-success mt-2">All Stock OK</h5>
+                                <small class="text-muted">Essential levels are optimal</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form action="{{ url_for('accountant.dashboard') }}" method="GET" class="row g-3 align-items-center">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" name="search_query" class="form-control border-start-0 ps-0" 
+                               placeholder="Search by Receipt # or Salonist name..." 
+                               value="{{ search_query or '' }}">
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-dark w-100 fw-bold">Find Entry</button>
+                    {% if search_query %}
+                        <a href="{{ url_for('accountant.dashboard') }}" class="btn btn-outline-secondary">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+            <h5 class="mb-0 fw-bold">
+                {% if search_query %}
+                    Search Results
+                {% else %}
+                    Latest Branch Entries
+                {% endif %}
+            </h5>
+            <a href="{{ url_for('accountant.record_work') }}" class="btn btn-sm btn-dark px-3 fw-bold">
+                <i class="bi bi-plus-lg me-1"></i> New Entry
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-uppercase small fw-bold">
+                        <tr>
+                            <th class="ps-4">Receipt #</th>
+                            <th>Salonist</th>
+                            <th>Service</th>
+                            <th>Total Cost</th>
+                            <th class="text-end pe-4">Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in recent_records %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="badge bg-secondary shadow-sm">#{{ record.receipt_no }}</span>
+                            </td>
+                            <td class="fw-bold">
+                                {# SAFE NAVIGATION: Prevents crash if worker_id is invalid or missing #}
+                                {{ record.worker.username if record.worker else 'Unknown Worker' }}
+                            </td>
+                            <td class="small text-muted">{{ record.service_type }}</td>
+                            <td class="text-success fw-bold">
+                                KSh {{ "{:,.2f}".format(record.total_cost or 0) }}
+                            </td>
+                            <td class="text-end pe-4 text-muted small">
+                                {# Fallback for appointment_time if it somehow defaults to None #}
+                                {{ record.appointment_time.strftime('%I:%M %p') if record.appointment_time else 'N/A' }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox display-4 d-block mb-2 opacity-25"></i>
+                                <p class="mb-0">No records found for this branch.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .extra-small { font-size: 0.7rem; }
+    .bg-soft-danger { background-color: rgba(220, 53, 69, 0.08); }
+    .bg-soft-warning { background-color: rgba(255, 193, 7, 0.08); }
+</style>
+{% endblock %}

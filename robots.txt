@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://africspa.com/sitemap.xml
+
+# Allow search engines to crawl all content
+# Disallow temporary and system directories
+Disallow: /tmp/
+Disallow: /__pycache__/
+Disallow: /.venv/
+Disallow: /.venv-1/
+Disallow: /migrations/
+Disallow: /instance/
+
+# Allow access to static files
+Allow: /static/
+Allow: /css/
+Allow: /js/
+Allow: /images/
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1
+
+# Host information
+Host: africspa.com

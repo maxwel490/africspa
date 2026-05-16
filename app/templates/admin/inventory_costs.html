@@ -1,0 +1,259 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_content %}
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <form action="{{ url_for('admin.product_costs') }}" method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Filter by Branch</label>
+                <select name="branch" class="form-select">
+                    <option value="">All Branches</option>
+                    {% for b in managed_branches %}
+                        <option value="{{ b }}" {% if selected_branch == b %}selected{% endif %}>{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Start Date</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date.strftime('%Y-%m-%d') }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">End Date</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date.strftime('%Y-%m-%d') }}">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100 fw-bold">Filter Period</button>
+            </div>
+
+            <div class="col-12 pt-2 border-top mt-3">
+                <h6 class="small fw-bold text-uppercase text-muted mb-2">Department Categories (Admin Input)</h6>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Wash Categories</label>
+                <input type="text" name="wash_categories" class="form-control" placeholder="e.g. Shampoo, Conditioner" value="{{ category_inputs.wash }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Nails Categories</label>
+                <input type="text" name="nails_categories" class="form-control" placeholder="e.g. Gel, Acrylic" value="{{ category_inputs.nails }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Makeup Categories</label>
+                <input type="text" name="makeup_categories" class="form-control" placeholder="e.g. Foundation, Primer" value="{{ category_inputs.makeup }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Extensions Categories</label>
+                <input type="text" name="extensions_categories" class="form-control" placeholder="e.g. Braids, Cornrows" value="{{ category_inputs.extensions }}">
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4 bg-light">
+    <div class="card-body">
+        <h6 class="fw-bold text-uppercase small text-muted mb-3"><i class="bi bi-droplet-flash me-2"></i>Utility Settlement Entry</h6>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="small fw-bold text-muted">Total Water Bill (KSh)</label>
+                <input type="text" id="waterBillMaster" class="form-control bg-white fw-bold border-0 shadow-none" 
+                       value="{{ "{:,.2f}".format(water_total or 0) }}" readonly tabindex="-1">
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold text-muted">Total Electric Bill (KSh)</label>
+                <input type="text" id="electricBillMaster" class="form-control bg-white fw-bold border-0 shadow-none" 
+                       value="{{ "{:,.2f}".format(electric_total or 0) }}" readonly tabindex="-1">
+            </div>
+        </div>
+        <p class="x-small text-muted mt-2 mb-0">
+            <em>* Costs auto-allocated from Expense Table: Water (80/10/10) | Power (60/20/20)</em>
+        </p>
+    </div>
+</div>
+
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h2 class="fw-bold mb-0">Invoice Reconciliation</h2>
+        <p class="text-muted mb-0">Current View: <span class="badge bg-dark">{{ selected_branch or 'Global' }}</span></p>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm border-start border-info border-5 h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small fw-bold">Wash Fund</h6>
+                <h3 class="fw-bold text-info" id="washTotal">KSh {{ "{:,.2f}".format(totals.wash) }}</h3>
+                <div class="mt-3 p-2 bg-light rounded">
+                    <div class="small text-muted mb-1">Auto Invoice</div>
+                    <div class="fw-bold" id="washInvoiceAuto">KSh {{ "{:,.2f}".format(invoice_totals.wash or 0) }}</div>
+                    <div class="x-small text-muted">Categories: {{ category_inputs.wash or 'Not set' }}</div>
+                    <div class="x-small text-muted">Entries: {{ invoice_meta.wash.count }}</div>
+                    <div class="x-small text-muted">Last: {{ invoice_meta.wash.last_updated.strftime('%Y-%m-%d %H:%M') if invoice_meta.wash.last_updated else 'N/A' }}</div>
+                    <div id="washResult" class="mt-2 small fw-bold"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm border-start border-primary border-5 h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small fw-bold">Nails Fund</h6>
+                <h3 class="fw-bold text-primary" id="nailsTotal">KSh {{ "{:,.2f}".format(totals.nails) }}</h3>
+                <div class="mt-3 p-2 bg-light rounded">
+                    <div class="small text-muted mb-1">Auto Invoice</div>
+                    <div class="fw-bold" id="nailsInvoiceAuto">KSh {{ "{:,.2f}".format(invoice_totals.nails or 0) }}</div>
+                    <div class="x-small text-muted">Categories: {{ category_inputs.nails or 'Not set' }}</div>
+                    <div class="x-small text-muted">Entries: {{ invoice_meta.nails.count }}</div>
+                    <div class="x-small text-muted">Last: {{ invoice_meta.nails.last_updated.strftime('%Y-%m-%d %H:%M') if invoice_meta.nails.last_updated else 'N/A' }}</div>
+                    <div id="nailsResult" class="mt-2 small fw-bold"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm border-start border-warning border-5 h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small fw-bold">Makeup Fund</h6>
+                <h3 class="fw-bold text-warning" id="makeupTotal">KSh {{ "{:,.2f}".format(totals.makeup) }}</h3>
+                <div class="mt-3 p-2 bg-light rounded">
+                    <div class="small text-muted mb-1">Auto Invoice</div>
+                    <div class="fw-bold" id="makeupInvoiceAuto">KSh {{ "{:,.2f}".format(invoice_totals.makeup or 0) }}</div>
+                    <div class="x-small text-muted">Categories: {{ category_inputs.makeup or 'Not set' }}</div>
+                    <div class="x-small text-muted">Entries: {{ invoice_meta.makeup.count }}</div>
+                    <div class="x-small text-muted">Last: {{ invoice_meta.makeup.last_updated.strftime('%Y-%m-%d %H:%M') if invoice_meta.makeup.last_updated else 'N/A' }}</div>
+                    <div id="makeupResult" class="mt-2 small fw-bold"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm border-start border-dark border-5 h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small fw-bold">Extensions Fund</h6>
+                <h3 class="fw-bold text-dark" id="extensionsTotal">KSh {{ "{:,.2f}".format(totals.extensions) }}</h3>
+                <div class="mt-3 p-2 bg-light rounded">
+                    <div class="small text-muted mb-1">Auto Invoice</div>
+                    <div class="fw-bold" id="extensionsInvoiceAuto">KSh {{ "{:,.2f}".format(invoice_totals.extensions or 0) }}</div>
+                    <div class="x-small text-muted">Categories: {{ category_inputs.extensions or 'Not set' }}</div>
+                    <div class="x-small text-muted">Entries: {{ invoice_meta.extensions.count }}</div>
+                    <div class="x-small text-muted">Last: {{ invoice_meta.extensions.last_updated.strftime('%Y-%m-%d %H:%M') if invoice_meta.extensions.last_updated else 'N/A' }}</div>
+                    <div id="extensionsResult" class="mt-2 small fw-bold"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<div class="d-flex justify-content-end mt-3">
+    <button id="saveReconciliationBtn" class="btn btn-success fw-bold">
+        <i class="bi bi-save me-1"></i> Save Reconciliation
+    </button>
+</div>
+
+<script>
+function parseCurrency(text) {
+    if (!text) return 0;
+    return parseFloat(text.replace(/[^0-9.-]+/g, "")) || 0;
+}
+
+function calculateDiff(category) {
+    const collected = parseCurrency(document.getElementById(category + 'Total').innerText);
+    const stockInvoice = parseCurrency(document.getElementById(category + 'InvoiceAuto').innerText);
+    
+    // Get master values from the read-only settlement boxes
+    const waterTotal = parseCurrency(document.getElementById('waterBillMaster').value);
+    const electricTotal = parseCurrency(document.getElementById('electricBillMaster').value);
+    
+    let utilityShare = 0;
+    
+    // Auto-allocation logic: Water (80/10/10) | Power (60/20/20)
+    if (category === 'wash') {
+        utilityShare = (waterTotal * 0.80) + (electricTotal * 0.60);
+    } else if (category === 'nails') {
+        utilityShare = (waterTotal * 0.10) + (electricTotal * 0.20);
+    } else if (category === 'extensions') {
+        utilityShare = (waterTotal * 0.10) + (electricTotal * 0.20);
+    }
+
+    const totalCost = stockInvoice + utilityShare;
+    const diff = collected - totalCost;
+    const resultDiv = document.getElementById(category + 'Result');
+
+    // Always show surplus/deficit, even if invoice is zero
+    if (collected > 0 || stockInvoice > 0 || utilityShare > 0) {
+        let utilNote = utilityShare > 0 ? `<div class="x-small text-muted mb-1">Inc. Utility share: KSh ${utilityShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>` : "";
+        
+        if (diff >= 0) {
+            resultDiv.innerHTML = `${utilNote}<span class="text-success"><i class="bi bi-arrow-up-circle me-1"></i>Surplus: KSh ${diff.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>`;
+        } else {
+            resultDiv.innerHTML = `${utilNote}<span class="text-danger"><i class="bi bi-arrow-down-circle me-1"></i>Deficit: KSh ${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>`;
+        }
+    } else {
+        resultDiv.innerHTML = "";
+    }
+}
+
+// Auto-run on page load to show initial states
+document.addEventListener('DOMContentLoaded', function() {
+    ['wash', 'nails', 'makeup', 'extensions'].forEach(cat => calculateDiff(cat));
+
+    document.getElementById('saveReconciliationBtn').addEventListener('click', function() {
+        // Gather data for each department
+        const categories = ['wash', 'nails', 'makeup', 'extensions'];
+        const entries = categories.map(cat => {
+            return {
+                category: cat.charAt(0).toUpperCase() + cat.slice(1),
+                collected: parseCurrency(document.getElementById(cat + 'Total').innerText),
+                invoice: parseCurrency(document.getElementById(cat + 'InvoiceAuto').innerText),
+                utility: (() => {
+                    const waterTotal = parseCurrency(document.getElementById('waterBillMaster').value);
+                    const electricTotal = parseCurrency(document.getElementById('electricBillMaster').value);
+                    if (cat === 'wash') return (waterTotal * 0.80) + (electricTotal * 0.60);
+                    if (cat === 'nails') return (waterTotal * 0.10) + (electricTotal * 0.20);
+                    if (cat === 'extensions') return (waterTotal * 0.10) + (electricTotal * 0.20);
+                    return 0;
+                })(),
+                diff: (() => {
+                    const collected = parseCurrency(document.getElementById(cat + 'Total').innerText);
+                    const stockInvoice = parseCurrency(document.getElementById(cat + 'InvoiceAuto').innerText);
+                    const waterTotal = parseCurrency(document.getElementById('waterBillMaster').value);
+                    const electricTotal = parseCurrency(document.getElementById('electricBillMaster').value);
+                    let utilityShare = 0;
+                    if (cat === 'wash') utilityShare = (waterTotal * 0.80) + (electricTotal * 0.60);
+                    else if (cat === 'nails') utilityShare = (waterTotal * 0.10) + (electricTotal * 0.20);
+                    else if (cat === 'extensions') utilityShare = (waterTotal * 0.10) + (electricTotal * 0.20);
+                    return collected - (stockInvoice + utilityShare);
+                })()
+            };
+        });
+
+        const payload = {
+            month_year: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+            branch: document.querySelector('select[name="branch"]').value || '',
+            entries: entries
+        };
+
+        fetch('/admin/save-reconciliation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Reconciliation saved!');
+            } else {
+                alert('Failed to save reconciliation: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            alert('Error saving reconciliation: ' + err);
+        });
+    });
+});
+</script>
+{% endblock %}

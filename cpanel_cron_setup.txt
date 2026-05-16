@@ -1,0 +1,93 @@
+# cPanel Cron Job Setup Instructions
+
+## Cron Jobs to Add in cPanel
+
+Go to cPanel > Cron Jobs and add the following cron jobs:
+
+### 1. Daily Database Backup
+**Command:**
+```
+/home/username/virtualenv/africspa.com/bin/python /home/username/africspa.com/cpanel_cron_jobs.py --backup
+```
+**Schedule:** Once a day at 2:00 AM
+**Minute:** 0
+**Hour:** 2
+**Day:** Every Day
+**Month:** Every Month
+**Weekday:** Every Day
+
+### 2. Log Rotation
+**Command:**
+```
+/home/username/virtualenv/africspa.com/bin/python /home/username/africspa.com/cpanel_cron_jobs.py --rotate-logs
+```
+**Schedule:** Once a week at 3:00 AM
+**Minute:** 0
+**Hour:** 3
+**Day:** Every Day
+**Month:** Every Month
+**Weekday:** Sunday
+
+### 3. Health Check
+**Command:**
+```
+/home/username/virtualenv/africspa.com/bin/python /home/username/africspa.com/cpanel_cron_jobs.py --health-check
+```
+**Schedule:** Every 6 hours
+**Minute:** 0
+**Hour:** */6
+**Day:** Every Day
+**Month:** Every Month
+**Weekday:** Every Day
+
+### 4. SSL Certificate Check
+**Command:**
+```
+/home/username/virtualenv/africspa.com/bin/python /home/username/africspa.com/cpanel_cron_jobs.py --ssl-check
+```
+**Schedule:** Once a week at 4:00 AM
+**Minute:** 0
+**Hour:** 4
+**Day:** Every Day
+**Month:** Every Month
+**Weekday:** Monday
+
+## Important Notes:
+
+1. **Replace "username"** with your actual cPanel username
+2. **Virtual Environment Path:** Make sure the virtual environment path matches your actual setup
+3. **Email Notifications:** Set up email notifications in cPanel to receive cron job output
+4. **Test First:** Test each cron job manually before scheduling
+
+## Manual Testing Commands:
+
+```bash
+# Test backup
+/home/username/virtualenv/africspa.com/bin/python /home/username/africspa.com/cpanel_cron_jobs.py --backup
+
+# Test log rotation
+/home/username/virtualenv/africspa.com/bin/python /home/username/africspa.com/cpanel_cron_jobs.py --rotate-logs
+
+# Test health check
+/home/username/virtualenv/africspa.com/bin/python /home/username/africspa.com/cpanel_cron_jobs.py --health-check
+
+# Test SSL check
+/home/username/virtualenv/africspa.com/bin/python /home/username/africspa.com/cpanel_cron_jobs.py --ssl-check
+```
+
+## Alternative: Using cPanel's Python Interface
+
+If your cPanel supports Python cron jobs directly:
+
+1. Go to cPanel > Cron Jobs
+2. Click "Add New Cron Job"
+3. Select "Python" from the dropdown
+4. Choose the Python version (3.9+)
+5. Set the script path and arguments as above
+
+## Monitoring:
+
+- Check cron job logs in cPanel > Cron Jobs > Cron Email
+- Monitor backup files in the `backups/` directory
+- Check application logs in `logs/` directory
+- Verify health check outputs for any issues

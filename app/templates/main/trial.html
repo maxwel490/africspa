@@ -1,0 +1,472 @@
+{% extends "base.html" %}
+
+{% block title %}Start Free Trial | Africa SPA System{% endblock %}
+{% block meta_description %}Start your 14-day free trial of Africa SPA System. One-time setup fee of $30 USD to prevent misuse. Experience continental salon management with unlimited features.{% endblock %}
+{% block meta_keywords %}Africa SPA System paid trial, salon management trial, continental SaaS trial, 14-day trial{% endblock %}
+{% block canonical_url %}https://africspa.com/trial{% endblock %}
+{% block og_description %}Start your paid trial of Africa SPA System - leading continental salon management platform for African beauty businesses.{% endblock %}
+
+{% block extra_head %}
+<script src="https://pay.google.com/gateway/passt/v1/pass.js"></script>
+<style>
+    .google-pay-button {
+        background-color: #000;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .google-pay-button:hover {
+        background-color: #333;
+    }
+</style>
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://africspa.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Free Trial", "item": "https://africspa.com/trial"}
+    ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="text-center mb-5">
+                    <h1 class="display-5 fw-bold mb-3">Start Your Free Trial</h1>
+                    <p class="lead text-muted">Start your 14-day trial with full access to all features. One-time setup fee of $30 USD to prevent misuse.</p>
+                    <div class="d-flex justify-content-center gap-3 mb-4">
+                        <div class="text-center">
+                            <i class="bi bi-shield-lock text-success fs-3"></i>
+                            <p class="small mb-0">$30 Setup Fee</p>
+                        </div>
+                        <div class="text-center">
+                            <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                            <p class="small mb-0">Full Features</p>
+                        </div>
+                        <div class="text-center">
+                            <i class="bi bi-calendar-check text-success fs-3"></i>
+                            <p class="small mb-0">14-Day Trial</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-lg rounded-4">
+                    <div class="card-body p-5">
+                        <form id="trialForm">
+                            <div class="row g-4">
+                                <!-- Business Information -->
+                                <div class="col-12">
+                                    <h4 class="fw-bold mb-3">
+                                        <i class="bi bi-building me-2 text-primary"></i>
+                                        Business Information
+                                    </h4>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Salon Name *</label>
+                                    <input type="text" class="form-control" name="salon_name" required>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Business Type *</label>
+                                    <select class="form-select" name="business_type" required>
+                                        <option value="">Select business type</option>
+                                        <option value="barbershop">Barbershop</option>
+                                        <option value="salon">Beauty Salon</option>
+                                        <option value="spa">Spa</option>
+                                        <option value="unisex">Unisex Salon</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Country *</label>
+                                    <select class="form-select" name="country" required>
+                                        <option value="">Select country</option>
+                                        <option value="KE">🇰🇪 Kenya</option>
+                                        <option value="NG">🇳🇬 Nigeria</option>
+                                        <option value="ZA">🇿🇦 South Africa</option>
+                                        <option value="GH">🇬🇭 Ghana</option>
+                                        <option value="EG">🇪🇬 Egypt</option>
+                                        <option value="ET">🇪🇹 Ethiopia</option>
+                                        <option value="TZ">🇹🇿 Tanzania</option>
+                                        <option value="UG">🇺🇬 Uganda</option>
+                                        <option value="RW">🇷🇼 Rwanda</option>
+                                        <option value="CM">🇨🇲 Cameroon</option>
+                                        <option value="CI">🇨🇮 Côte d'Ivoire</option>
+                                        <option value="SN">🇸🇳 Senegal</option>
+                                        <option value="MA">🇲🇦 Morocco</option>
+                                        <option value="TN">🇹🇳 Tunisia</option>
+                                        <option value="other">🌍 Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Number of Branches *</label>
+                                    <select class="form-select" name="branch_count" required>
+                                        <option value="">Select branches</option>
+                                        <option value="1">1 Branch</option>
+                                        <option value="2-5">2-5 Branches</option>
+                                        <option value="6-10">6-10 Branches</option>
+                                        <option value="11-25">11-25 Branches</option>
+                                        <option value="26-50">26-50 Branches</option>
+                                        <option value="50+">50+ Branches</option>
+                                    </select>
+                                </div>
+
+                                <!-- Personal Information -->
+                                <div class="col-12 mt-4">
+                                    <h4 class="fw-bold mb-3">
+                                        <i class="bi bi-person me-2 text-primary"></i>
+                                        Personal Information
+                                    </h4>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Owner Name *</label>
+                                    <input type="text" class="form-control" name="owner_name" placeholder="Full name" required>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Business Address</label>
+                                    <input type="text" class="form-control" name="address" placeholder="Street address, city, country">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Email Address *</label>
+                                    <input type="email" class="form-control" name="email" required>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Phone Number *</label>
+                                    <input type="tel" class="form-control" name="phone" placeholder="+254..." required>
+                                </div>
+
+                                <!-- Account Setup -->
+                                <div class="col-12 mt-4">
+                                    <h4 class="fw-bold mb-3">
+                                        <i class="bi bi-gear me-2 text-primary"></i>
+                                        Account Setup
+                                    </h4>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Desired Username *</label>
+                                    <input type="text" class="form-control" name="username" id="trialUsername" required>
+                                    <small class="text-muted">This will be your login username</small>
+                                    <div id="usernameSuggestions" class="mt-2" style="display: none;"></div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Password *</label>
+                                    <input type="password" class="form-control" name="password" required>
+                                    <small class="text-muted">Minimum 8 characters</small>
+                                </div>
+
+                                <!-- Payment Information -->
+                                <div class="col-12 mt-4">
+                                    <h4 class="fw-bold mb-3">
+                                        <i class="bi bi-credit-card me-2 text-primary"></i>
+                                        Payment Information
+                                    </h4>
+                                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        <div>
+                                            <strong>One-time setup fee: $30 USD</strong><br>
+                                            Secure payment processing via Google Pay. Your 14-day trial begins immediately after successful payment.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="google-pay-button-container">
+                                        <div id="google-pay-button"></div>
+                                    </div>
+                                </div>
+
+                                <input type="hidden" name="google_pay_order_id" id="google_pay_order_id">
+
+                                <!-- Terms and Submit -->
+                                <div class="col-12 mt-4">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" name="terms" required>
+                                        <label class="form-check-label">
+                                            I agree to the <a href="#" class="text-primary">Terms of Service</a> and <a href="#" class="text-primary">Privacy Policy</a>
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-4">
+                                        <input class="form-check-input" type="checkbox" name="marketing">
+                                        <label class="form-check-label">
+                                            I'd like to receive updates about Africa SPA System features and offers
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill">
+                                        <i class="bi bi-credit-card me-2"></i>
+                                        Pay $30 & Start Trial
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Trust Indicators -->
+                <div class="row mt-5">
+                    <div class="col-md-4 text-center mb-4">
+                        <div class="p-3">
+                            <i class="bi bi-shield-lock text-success fs-1 mb-3"></i>
+                            <h5 class="fw-bold">Secure & Private</h5>
+                            <p class="text-muted">Your data is protected with enterprise-grade security and complete tenant isolation.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center mb-4">
+                        <div class="p-3">
+                            <i class="bi bi-headset text-primary fs-1 mb-3"></i>
+                            <h5 class="fw-bold">Free Support</h5>
+                            <p class="text-muted">Get help during your trial with our dedicated customer support team.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center mb-4">
+                        <div class="p-3">
+                            <i class="bi bi-gear text-warning fs-1 mb-3"></i>
+                            <h5 class="fw-bold">Full Access</h5>
+                            <p class="text-muted">Experience all features including multi-currency, analytics, and branch management.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.25);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #34495e 100%);
+        border: none;
+        padding: 12px 30px;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #34495e 0%, var(--primary-color) 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+</style>
+
+<script>
+// Initialize Google Pay
+function onGooglePayLoaded() {
+    const googlePayButton = document.getElementById('google-pay-button');
+    
+    if (googlePayButton) {
+        const googlePayClient = new google.payments.api.PaymentsClient({
+            environment: 'TEST', // Use 'PRODUCTION' for live
+            merchantInfo: {
+                merchantId: 'your-merchant-id', // Add your merchant ID
+                merchantName: 'Africa SPA System'
+            }
+        });
+        
+        const paymentDataRequest = {
+            apiVersion: 2,
+            apiVersionMinor: 0,
+            allowedPaymentMethods: ['CARD', 'TOKENIZED_CARD'],
+            merchantInfo: {
+                merchantId: 'your-merchant-id', // Add your merchant ID
+                merchantName: 'Africa SPA System'
+            },
+            transactionInfo: {
+                totalPriceStatus: 'FINAL',
+                currencyCode: 'USD',
+                totalPrice: '30.00'
+            },
+            callbackIntents: ['PAYMENT_AUTHORIZATION']
+        };
+        
+        const options = {
+            buttonColor: 'default',
+            buttonType: 'pay',
+            buttonSizeMode: 'fill'
+        };
+        
+        googlePayClient.createButton({
+            button: googlePayButton,
+            paymentRequest: paymentDataRequest,
+            options: options
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', onGooglePayLoaded);
+
+document.getElementById('trialForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Collect form data
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    // Basic validation
+    if (!data.terms) {
+        alert('Please accept Terms of Service and Privacy Policy');
+        return;
+    }
+    
+    if (!data.email || !data.email.includes('@')) {
+        alert('Please enter a valid email address');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Creating Google Pay order...';
+    submitBtn.disabled = true;
+    
+    // First create Google Pay order
+    fetch('/create-google-pay-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(orderResult => {
+        if (orderResult.error) {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            alert('Error: ' + orderResult.error);
+            return;
+        }
+        
+        // Store order ID
+        document.getElementById('google_pay_order_id').value = orderResult.orderId;
+        
+        // Process trial after Google Pay order created
+        fetch('/process-trial', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(trialResult => {
+            if (trialResult.success) {
+                // Show success message
+                submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Payment Successful!';
+                submitBtn.classList.remove('btn-primary');
+                submitBtn.classList.add('btn-success');
+                
+                // Show success message
+                setTimeout(() => {
+                    const successMessage = `🎉 Welcome to Africa SPA System!\n\n` +
+                        `Your 14-day trial has been successfully created.\n` +
+                        `Payment processed: $30 USD\n` +
+                        `Check your email: ${data.email}\n\n` +
+                        `What's next:\n` +
+                        `• Login credentials sent to your email\n` +
+                        `• Your salon dashboard is ready\n` +
+                        `• 14-day trial period has begun\n\n` +
+                        `For support: trial@africspa.com`;
+                    
+                    alert(successMessage);
+                    
+                    // Redirect to login page
+                    window.location.href = trialResult.redirect_url || '/login';
+                }, 1000);
+            } else {
+                // Show error message
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                alert('Error: ' + trialResult.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            alert('An error occurred. Please try again or contact support.');
+        });
+    });
+});
+
+// Real-time username validation with Google-style suggestions for trial
+document.getElementById('trialUsername').addEventListener('input', function() {
+    const username = this.value.trim();
+    const usernameField = this;
+    const suggestionsContainer = document.getElementById('usernameSuggestions');
+    
+    // Clear previous validation state
+    usernameField.classList.remove('is-invalid', 'is-valid');
+    suggestionsContainer.style.display = 'none';
+    suggestionsContainer.innerHTML = '';
+    
+    if (username.length >= 3) {
+        // Check username availability via AJAX
+        fetch(`/check-username-public?username=${encodeURIComponent(username)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.available) {
+                    usernameField.classList.add('is-valid');
+                    usernameField.classList.remove('is-invalid');
+                } else {
+                    usernameField.classList.add('is-invalid');
+                    usernameField.classList.remove('is-valid');
+                    
+                    // Show Google-style suggestions if available
+                    if (data.suggestions && data.suggestions.length > 0) {
+                        suggestionsContainer.style.display = 'block';
+                        suggestionsContainer.innerHTML = `
+                            <div class="text-muted small mb-1">This username is taken. You can use:</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                ${data.suggestions.slice(0, 3).map(suggestion => `
+                                    <button type="button" class="btn btn-sm btn-outline-success username-suggestion" 
+                                            style="color: #198754; border-color: #198754; font-weight: 500;"
+                                            onclick="selectUsernameTrial('${suggestion}')">
+                                        ${suggestion}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                
+            });
+    }
+});
+
+// Function to select a suggested username for trial
+function selectUsernameTrial(username) {
+    const usernameField = document.getElementById('trialUsername');
+    const suggestionsContainer = document.getElementById('usernameSuggestions');
+    
+    usernameField.value = username;
+    usernameField.classList.add('is-valid');
+    usernameField.classList.remove('is-invalid');
+    suggestionsContainer.style.display = 'none';
+    suggestionsContainer.innerHTML = '';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Login - AfricSpa Multi-Tenant System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card border-0 shadow-lg">
+            <div class="card-header bg-gradient text-white text-center py-3">
+                <h4 class="mb-0">
+                    <i class="fas fa-spa me-2"></i>
+                    AfricSpa Portal
+                </h4>
+                <small class="text-white-50">Multi-Tenant Management System</small>
+            </div>
+            <div class="card-body p-4">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-bold text-uppercase small">
+                            <i class="fas fa-user me-1"></i>
+                            Username or Email
+                        </label>
+                        <input type="text" name="username" id="username" class="form-control form-control-lg" 
+                               placeholder="Enter username or email address" required autofocus>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-bold text-uppercase small">
+                            <i class="fas fa-lock me-1"></i>
+                            Password
+                        </label>
+                        <input type="password" name="password" id="password" class="form-control form-control-lg" 
+                               placeholder="Enter your password" required>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm w-100">
+                            <i class="fas fa-sign-in-alt me-1"></i>
+                            Sign In
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- OAuth Login Options -->
+                <div class="mt-4">
+                    <div class="text-center mb-3">
+                        <span class="text-muted small">Or sign in with</span>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('oauth.oauth_login', provider='google') }}" class="btn btn-outline-danger btn-sm w-100">
+                            <i class="fab fa-google me-2"></i>
+                            Google Account
+                        </a>
+                        <a href="{{ url_for('oauth.oauth_login', provider='apple') }}" class="btn btn-outline-dark btn-sm w-100">
+                            <i class="fab fa-apple me-2"></i>
+                            Apple ID (iCloud)
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-light text-center py-3">
+                <hr class="my-2">
+                <p class="text-muted small mb-0">
+                    &copy; 2026 AfricSpa Multi-Tenant SaaS Platform
+                </p>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <div class="row">
+                <div class="col-12">
+                    <p class="text-muted small">
+                        <i class="fas fa-question-circle me-1"></i>
+                        Forgot your password? 
+                        <a class="text-primary fw-semibold" href="{{ url_for('auth.forgot_password') }}">
+                            Reset it here (Salonists only)
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card-header.bg-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+</style>
+{% endblock %}

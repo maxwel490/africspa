@@ -1,0 +1,441 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Support Chat - Tenant Admin{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1">Support Chat</h4>
+            <p class="text-muted mb-0">Communicate with Africa SPA System support team</p>
+        </div>
+        <div>
+            {% if unread_count > 0 %}
+            <span class="badge bg-danger">{{ unread_count }} unread</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Conversations List -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-chat-dots me-2"></i>Support Conversations
+                    </h6>
+                </div>
+                <div class="card-body p-0" style="max-height: 500px; overflow-y: auto;">
+                    {% for session_key, conversation in conversations.items() %}
+                    <div class="conversation-item border-bottom p-3 {% if conversation[-1].is_read %}bg-light{% else %}bg-warning bg-opacity-10{% endif %}"
+                         onclick="loadConversation('{{ session_key }}')" style="cursor: pointer;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-bold">
+                                    {% if conversation[-1].sender_role == 'superadmin' %}
+                                    <i class="bi bi-headset me-1 text-primary"></i>{{ conversation[-1].sender_name }}
+                                    <span class="badge bg-primary ms-2">Support Team</span>
+                                    {% else %}
+                                    <i class="bi bi-person-circle me-1"></i>{{ conversation[-1].sender_name }}
+                                    <span class="badge bg-secondary ms-2">You</span>
+                                    {% endif %}
+                                    {% if not conversation[-1].is_read %}
+                                    <span class="badge bg-danger ms-2">New</span>
+                                    {% endif %}
+                                </div>
+                                <div class="small text-muted">
+                                    {{ conversation[-1].content[:50] }}{% if conversation[-1].content|length > 50 %}...{% endif %}
+                                </div>
+                                <div class="small text-muted">
+                                    <i class="bi bi-clock me-1"></i><span class="conversation-time">{{ conversation[-1].created_at }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if conversations|length == 0 %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-chat-dots fs-1 text-muted mb-3"></i>
+                        <p class="text-muted">No support conversations yet</p>
+                        <button class="btn btn-primary" onclick="startNewConversation()">
+                            <i class="bi bi-plus-circle me-2"></i>Start New Conversation
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-chat-fill me-2"></i>
+                        <span id="currentConversation">Select a conversation</span>
+                    </h6>
+                    <div>
+                        <button class="btn btn-sm btn-outline-light me-2" onclick="refreshCurrentConversation()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-light" onclick="markAsRead()">
+                            <i class="bi bi-check-all"></i> Mark Read
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Messages -->
+                    <div id="chatMessages" class="chat-messages" style="height: 400px; overflow-y: auto; padding: 20px; background-color: #f8f9fa;">
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-chat-dots fs-1 mb-3"></i>
+                            <p>Select a conversation to view messages</p>
+                            <small class="text-muted">Or start a new conversation with our support team</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Reply Input -->
+                    <div id="replyArea" class="message-input p-3 border-top" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold">
+                                <i class="bi bi-headset me-2 text-primary"></i>
+                                <span id="recipientName">Support Team</span>
+                            </span>
+                            <span class="badge bg-success">Online</span>
+                        </div>
+                        <form id="replyForm" class="d-flex gap-2">
+                            <input type="hidden" id="recipientId" value="">
+                            <input type="hidden" id="sessionId" value="">
+                            <div class="flex-grow-1">
+                                <textarea id="replyInput" class="form-control" 
+                                         placeholder="Type your message..." maxlength="500" rows="2" required></textarea>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <small class="text-muted">
+                                        <span id="charCount">0</span>/500 characters
+                                    </small>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="insertTemplate('help')" title="Ask for help">
+                                            <i class="bi bi-question-circle"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="insertTemplate('issue')" title="Report issue">
+                                            <i class="bi bi-bug"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="insertTemplate('thanks')" title="Say thanks">
+                                            <i class="bi bi-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-column gap-1">
+                                <button type="submit" class="btn btn-primary" id="sendBtn">
+                                    <i class="bi bi-send"></i> Send
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearReply()">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .chat-messages {
+        scrollbar-width: thin;
+    }
+    
+    .message-bubble {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .sent .message-bubble {
+        border-bottom-right-radius: 0.5rem !important;
+    }
+    
+    .received .message-bubble {
+        border-bottom-left-radius: 0.5rem !important;
+    }
+    
+    .conversation-item:hover {
+        background-color: #e9ecef !important;
+    }
+    
+    .conversation-item {
+        transition: background-color 0.2s ease;
+    }
+</style>
+
+<script>
+// Tenant Admin Chat JavaScript
+let currentConversation = null;
+let currentMessages = [];
+
+// Make conversations data available to JavaScript
+const conversations = {{ conversations|tojson|safe }};
+
+// Message templates
+const templates = {
+    help: "I need help with my salon management system. Could you assist me?",
+    issue: "I'm experiencing an issue with the system. Here are the details:",
+    thanks: "Thank you for your help! I really appreciate the support."
+};
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Format conversation times
+    document.querySelectorAll('.conversation-time').forEach(element => {
+        const timeString = element.textContent;
+        const date = new Date(timeString);
+        element.textContent = date.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+    });
+    
+    // Character counter
+    document.getElementById('replyInput')?.addEventListener('input', function() {
+        const charCount = this.value.length;
+        document.getElementById('charCount').textContent = charCount;
+    });
+});
+
+function loadConversation(sessionKey) {
+    // Prevent multiple rapid calls
+    if (window.loadingConversation) {
+        return;
+    }
+    window.loadingConversation = true;
+    
+    currentConversation = sessionKey;
+    
+    // Update header and status
+    const conversation = conversations[sessionKey];
+    const lastMessage = conversation[conversation.length - 1];
+    
+    document.getElementById('currentConversation').textContent = 
+        lastMessage.sender_role === 'superadmin' ? lastMessage.sender_name : 'Support Team';
+    
+    // Set recipient info
+    document.getElementById('recipientName').textContent = 'Support Team';
+    document.getElementById('recipientId').value = 'superadmin';
+    document.getElementById('sessionId').value = sessionKey;
+    
+    // Show reply area
+    document.getElementById('replyArea').style.display = 'block';
+    
+    // Load messages
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.innerHTML = '';
+    
+    const currentUserId = {{ current_user.id }};
+    conversation.forEach(msg => {
+        addMessageToChat(msg, msg.sender_id === currentUserId);
+    });
+    
+    // Scroll to bottom
+    scrollToBottom();
+    
+    // Mark messages as read
+    markMessagesAsRead(sessionKey);
+    
+    // Clear loading flag after a short delay
+    setTimeout(() => {
+        window.loadingConversation = false;
+    }, 100);
+}
+
+function addMessageToChat(message, isSent) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message mb-3 ' + (isSent ? 'sent' : 'received');
+    
+    const time = new Date(message.created_at).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+    
+    messageDiv.innerHTML = `
+        <div class="d-flex ${isSent ? 'justify-content-end' : 'justify-content-start'}">
+            <div class="message-bubble ${isSent ? 'bg-primary text-white' : 'bg-white border'} p-3 rounded-3" style="max-width: 70%;">
+                <div class="small fw-bold mb-1">
+                    ${message.sender_name}
+                    <span class="text-muted ms-2">${time}</span>
+                    ${message.sender_role === 'superadmin' ? '<i class="bi bi-headset ms-2"></i>' : ''}
+                </div>
+                <div>${message.content}</div>
+            </div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function insertTemplate(type) {
+    const template = templates[type];
+    const replyInput = document.getElementById('replyInput');
+    
+    if (template) {
+        replyInput.value = template;
+        replyInput.focus();
+        
+        // Update character count
+        document.getElementById('charCount').textContent = template.length;
+    }
+}
+
+function clearReply() {
+    document.getElementById('replyInput').value = '';
+    document.getElementById('charCount').textContent = '0';
+    document.getElementById('replyInput').focus();
+}
+
+function markMessagesAsRead(sessionKey) {
+    fetch('/admin/chat/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionKey })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update conversation read status locally instead of reloading
+            const conversation = conversations[sessionKey];
+            if (conversation) {
+                conversation.forEach(msg => {
+                    msg.is_read = true;
+                });
+            }
+        }
+    })
+    .catch(error => console.error('Error marking as read:', error));
+}
+
+function markAsRead() {
+    if (currentConversation) {
+        markMessagesAsRead(currentConversation);
+    }
+}
+
+function refreshCurrentConversation() {
+    if (currentConversation) {
+        location.reload();
+    }
+}
+
+function startNewConversation() {
+    console.log('Starting new conversation...');
+    
+    // Create a new session
+    const sessionId = 'admin_session_' + Date.now();
+    console.log('Session ID:', sessionId);
+    
+    const payload = {
+        message: "Hello, I need assistance with my salon management system.",
+        session_id: sessionId
+    };
+    console.log('Payload:', payload);
+    
+    // Send initial message to superadmin
+    fetch('/admin/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            console.log('Conversation started successfully');
+            // Add the new message to conversations and load it
+            if (!window.conversations[sessionId]) {
+                window.conversations[sessionId] = [];
+            }
+            window.conversations[sessionId].push({
+                id: data.message.id,
+                content: data.message.content,
+                sender_id: {{ current_user.id }},
+                sender_name: '{{ current_user.full_name }}',
+                sender_role: 'admin',
+                recipient_id: null,
+                recipient_name: 'Support Team',
+                recipient_role: 'superadmin',
+                session_id: sessionId,
+                is_read: false,
+                created_at: data.message.created_at
+            });
+            
+            // Load the new conversation
+            loadConversation(sessionId);
+        } else {
+            console.error('Server error:', data.error);
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Network error:', error);
+        alert('Failed to start conversation: ' + error.message);
+    });
+}
+
+document.getElementById('replyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const replyInput = document.getElementById('replyInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const content = replyInput.value.trim();
+    
+    if (!content) return;
+    
+    // Disable form
+    replyInput.disabled = true;
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
+    
+    // Send message
+    fetch('/admin/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            recipient_id: 'superadmin',
+            message: content,
+            session_id: document.getElementById('sessionId').value
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Add message to chat
+            addMessageToChat({
+                content: content,
+                sender_name: '{{ current_user.full_name }}',
+                created_at: new Date().toISOString()
+            }, true);
+            
+            // Clear input
+            replyInput.value = '';
+            document.getElementById('charCount').textContent = '0';
+        } else {
+            alert('Failed to send message: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error sending message:', error);
+        alert('Failed to send message. Please try again.');
+    })
+    .finally(() => {
+        // Re-enable form
+        replyInput.disabled = false;
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="bi bi-send"></i> Send';
+        replyInput.focus();
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,183 @@
+{% extends "salonist/salonist_base.html" %}
+
+{% block salonist_title %}Salonist Dashboard - {{ current_user.branch }}{% endblock %}
+
+{% block salonist_content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="display-6 fw-bold mb-0">Performance Overview</h2>
+        <p class="text-muted mb-0">
+            Currently viewing records for: <span class="badge bg-dark">{{ current_user.branch }} Branch</span>
+        </p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <span class="text-muted small">Current Week:</span>
+        <span class="badge bg-outline-dark border text-dark">{{ week_start }} — Present</span>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-dark text-white shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="opacity-75 text-uppercase small fw-bold">Services Done</h6>
+                        <h2 class="fw-bold mb-0">{{ work_done|length }}</h2>
+                    </div>
+                    <i class="bi bi-scissors fs-1 opacity-25"></i>
+                </div>
+                <small class="text-info">Total tasks completed</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-success text-white shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="opacity-75 text-uppercase small fw-bold">Weekly Earnings</h6>
+                        <h2 class="fw-bold mb-0">KSh {{ "{:,.2f}".format(total_earned) }}</h2>
+                    </div>
+                    <i class="bi bi-wallet2 fs-1 opacity-25"></i>
+                </div>
+                <small class="text-white-50">Commission + Recorded Tips</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-white shadow-sm border-0 h-100 border-start border-danger border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="text-muted text-uppercase small fw-bold">Deductions (This Week)</h6>
+                        <h2 class="fw-bold mb-0 text-danger">
+                            - KSh {{ "{:,.2f}".format(total_deductions or 0) }}
+                        </h2>
+                    </div>
+                    <i class="bi bi-droplet fs-1 text-danger opacity-25"></i>
+                </div>
+                <small class="text-muted">By deduction type</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-primary text-white shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="opacity-75 text-uppercase small fw-bold">Net Payout</h6>
+                        <h2 class="fw-bold mb-0">
+                            KSh {{ "{:,.2f}".format(net_payout or 0) }}
+                        </h2>
+                    </div>
+                    <i class="bi bi-cash-stack fs-1 opacity-25"></i>
+                </div>
+                <small class="text-white-50">Final Take-home</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4">
+    <div class="card-header bg-white py-3 border-bottom">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-journal-check me-2 text-danger"></i>Deduction Types (This Week)</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Type</th>
+                    <th>Reason</th>
+                    <th class="text-end pe-4">Amount (KSh)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in weekly_deductions %}
+                <tr>
+                    <td class="ps-4 fw-bold text-uppercase small">{{ item.deduction_type.replace('_', ' ') }}</td>
+                    <td class="small text-muted">{{ item.reason or '-' }}</td>
+                    <td class="text-end pe-4 text-danger fw-bold">- {{ "{:,.2f}".format(item.amount or 0) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-center py-4 text-muted">No deductions applied this week.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2 text-primary"></i>My Recent Services</h5>
+        <a href="{{ url_for('salonist.work_history') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+            View Full Log <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Customer</th>
+                        <th>Service Type</th>
+                        <th>Date & Time</th>
+                        <th class="text-end pe-4">My Share (KSh)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for work in full_history %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-dark">
+                            <i class="bi bi-person-circle me-2 text-muted"></i>
+                            {# FIXED: Changed .customer to .client to match the model relationship #}
+                            {{ work.client.full_name if work.client else "Walk-in Client" }}
+                            <div class="text-muted extra-small fw-normal">Receipt #{{ work.receipt_no or 'N/A' }}</div>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill {% if work.service_type == 'Braids' %}bg-primary{% else %}bg-info text-dark{% endif %}">
+                                {{ work.service_type }}
+                            </span>
+                        </td>
+                        <td class="small text-muted">
+                            {% if work.appointment_time %}
+                                <div class="fw-bold text-dark">{{ work.appointment_time.strftime('%b %d') }}</div>
+                                {{ work.appointment_time.strftime('%I:%M %p') }}
+                            {% else %}
+                                Unknown Date
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="fw-bold text-success">+ {{ "{:,.2f}".format(work.commission_earned or 0) }}</div>
+                            {% if work.tips %}
+                                <div class="text-muted extra-small">Tip: {{ "{:,.2f}".format(work.tips) }}</div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5">
+                            <i class="bi bi-journal-x text-muted display-4 d-block mb-3 opacity-25"></i>
+                            <p class="text-muted mb-0">No services recorded for you in {{ current_user.branch }} yet.</p>
+                            <small class="text-muted">Activity will appear here once the Accountant logs a service.</small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .extra-small { font-size: 0.75rem; }
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.02);
+    }
+</style>
+{% endblock %}

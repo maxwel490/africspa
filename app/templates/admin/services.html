@@ -1,0 +1,254 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_content %}
+<div class="container-fluid py-2">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white py-3">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-gear-wide-connected me-2"></i>Service Logic Configuration</h6>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ url_for('admin.manage_services', branch=request.args.get('branch')) }}" method="POST" id="serviceForm">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-uppercase">Service Name</label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Knotless Braids" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-uppercase text-primary">Category</label>
+                            <select name="category" class="form-select border-primary" id="serviceCategory" onchange="updateCalculations()" required>
+                                <option value="Hair">Hair (Standard 50/50 Pool)</option>
+                                <option value="Special Hair">Special Hair (Fixed Rate Split)</option> 
+                                <option value="Color">Color</option>
+                                <option value="Wash">Wash</option>
+                                <option value="Nails">Nails</option>
+                                <option value="Makeup">Makeup</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-uppercase">Standard Base Price ({{ salon_currency }})</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">{{ salon_currency }}</span>
+                                <input type="number" id="basePrice" name="base_price" class="form-control" placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="pricingModeWrap">
+                            <label class="form-label small fw-bold text-uppercase text-warning">Base Pricing Type</label>
+                            <select name="is_fixed_base" id="pricingMode" class="form-select border-warning">
+                                <option value="true">Fixed Base = True (Scene 2)</option>
+                                <option value="false">Fixed Base = False (Scene 1)</option>
+                            </select>
+                            <small class="text-muted">Used by Record Work to auto-toggle pricing scene when this service is selected.</small>
+                        </div>
+
+                        <div class="alert alert-secondary py-2 border-0 mb-3" id="statusAlert">
+                            <small class="fw-bold text-uppercase d-block mb-1" id="poolLabel">Total Commission Pool (50%)</small>
+                            <h5 class="mb-0 text-dark">{{ salon_currency }} <span id="calcTotalComm">0.00</span></h5>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6" id="modeContainer">
+                                <label class="form-label small fw-bold text-uppercase">Input Mode</label>
+                                <select id="commMode" class="form-select border-primary" onchange="updateCalculations()">
+                                    <option value="fixed">Fixed Amount</option>
+                                    <option value="rate">Rate (e.g. 0.4)</option>
+                                </select>
+                            </div>
+                            <div class="col" id="inputCol">
+                                <label class="form-label small fw-bold text-uppercase text-primary" id="frontLabel">Frontal KSh</label>
+                                <input type="number" id="commFrontInput" class="form-control border-primary" step="0.01" value="0">
+                                <input type="hidden" id="commFront" name="commission_front">
+                            </div>
+                        </div>
+
+                        <div class="mb-4" id="backCommSection">
+                            <label class="form-label small fw-bold text-uppercase text-info" id="backLabel">Back Commission (Remainder)</label>
+                            <input type="number" id="commBackInput" class="form-control bg-light" step="0.01">
+                            <input type="hidden" id="commBack" name="commission_back">
+                            <small class="text-muted" id="backHelpText">Auto-calculated: <strong>Pool - Frontal</strong></small>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-dark btn-lg shadow-sm">Save Service Template</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">Active Service Menu</h5>
+                    <span class="badge bg-light text-dark border">{{ services|length }} Services</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr class="small text-uppercase text-muted">
+                                <th class="ps-4">Service</th>
+                                <th>Category</th>
+                                <th>Base Mode</th>
+                                <th>Base Price</th>
+                                <th>Frontal</th>
+                                <th>Back Payout</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in services %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark">{{ s.name }}</div>
+                                    <span class="badge {% if 'Hair' in s.category %}bg-primary{% else %}bg-secondary{% endif %} opacity-75" style="font-size: 0.65rem;">
+                                        {{ s.category }}
+                                    </span>
+                                </td>
+                                <td>{{ s.category }}</td>
+                                <td>
+                                    {% if not (s.is_fixed_base if s.is_fixed_base is not none else true) %}
+                                        <span class="badge bg-warning text-dark">Unfixed</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Fixed</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold">{{ salon_currency }} {{ "{:,.0f}".format(s.base_price) }}</td>
+                                <td class="text-success fw-bold">
+                                    {% if s.category == 'Hair' and s.commission_front >= 1.0 %}
+                                        {{ salon_currency }} {{ "{:,.0f}".format(s.commission_front or 0) }}
+                                    {% else %}
+                                        {{ s.commission_front }} (Rate)
+                                    {% endif %}
+                                </td>
+                                <td class="text-info">
+                                    {% if s.category == 'Hair' %}
+                                        {{ salon_currency }} {{ "{:,.0f}".format(s.commission_back or 0) }}
+                                    {% elif s.category == 'Special Hair' %}
+                                        {{ s.commission_back }} (Rate)
+                                    {% else %}
+                                        <span class="text-muted small">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <form action="{{ url_for('admin.manage_services', service_id=s.id, branch=request.args.get('branch')) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this service?')">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="service_id" value="{{ s.id }}">
+                                        <input type="hidden" name="branch" value="{{ request.args.get('branch') or '' }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="7" class="text-center py-5 text-muted">No services defined yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* YOUR ORIGINAL LOGIC - UNCHANGED */
+    const baseInput = document.getElementById('basePrice');
+    const categorySelect = document.getElementById('serviceCategory');
+    const pricingModeWrap = document.getElementById('pricingModeWrap');
+    const modeSelect = document.getElementById('commMode');
+    const modeContainer = document.getElementById('modeContainer');
+    const inputCol = document.getElementById('inputCol');
+    
+    const visualFront = document.getElementById('commFrontInput');
+    const hiddenFront = document.getElementById('commFront');
+    
+    const visualBack = document.getElementById('commBackInput');
+    const hiddenBack = document.getElementById('commBack');
+    
+    const backSection = document.getElementById('backCommSection');
+    const backLabel = document.getElementById('backLabel');
+    const backHelpText = document.getElementById('backHelpText');
+    
+    const totalDisplay = document.getElementById('calcTotalComm');
+    const poolLabel = document.getElementById('poolLabel');
+    const frontLabel = document.getElementById('frontLabel');
+    const statusAlert = document.getElementById('statusAlert');
+
+    function updateCalculations() {
+        const base = parseFloat(baseInput.value) || 0;
+        const category = categorySelect.value;
+        let mode = modeSelect.value;
+        let valF = parseFloat(visualFront.value) || 0;
+        let valB = parseFloat(visualBack.value) || 0;
+
+        if (category === 'Hair') {
+            modeContainer.style.display = 'block';
+            inputCol.className = 'col-md-6';
+            backSection.style.display = 'block';
+            visualBack.readOnly = true;
+            visualBack.className = "form-control bg-light";
+            backLabel.innerText = "Back Commission (Remainder)";
+            backHelpText.innerHTML = "Auto-calculated: <strong>Pool - Frontal</strong>";
+            
+            poolLabel.innerText = "Total Commission Pool (50%)";
+            frontLabel.innerText = (mode === 'fixed') ? "Frontal {{ salon_currency }}" : "Enter Rate (e.g. 0.2)";
+            statusAlert.className = "alert alert-secondary py-2 border-0 mb-3";
+
+            const pool = base * 0.5;
+            totalDisplay.innerText = pool.toLocaleString(undefined, {minimumFractionDigits: 2});
+            
+            hiddenFront.value = valF; 
+            
+            let currentFrontKsh = (mode === 'rate') ? (base * valF) : valF;
+            let calcBack = Math.max(0, pool - currentFrontKsh);
+            
+            visualBack.value = calcBack.toFixed(2);
+            hiddenBack.value = calcBack.toFixed(2);
+
+        } else if (category === 'Special Hair') {
+            modeContainer.style.display = 'none';
+            inputCol.className = 'col-md-12';
+            backSection.style.display = 'block';
+            visualBack.readOnly = false;
+            visualBack.className = "form-control border-info";
+            backLabel.innerText = "Back Salonist Rate (e.g. 0.25)";
+            backHelpText.innerText = "Input the manual rate for the assistant/back worker.";
+            
+            poolLabel.innerText = "Total Expected Payout (Combined)";
+            frontLabel.innerText = "Front Salonist Rate (e.g. 0.25)";
+            statusAlert.className = "alert alert-warning py-2 border-0 mb-3";
+
+            hiddenFront.value = valF; 
+            hiddenBack.value = valB;
+            
+            let visualTotalKsh = base * (valF + valB);
+            totalDisplay.innerText = visualTotalKsh.toLocaleString(undefined, {minimumFractionDigits: 2});
+
+        } else {
+            modeContainer.style.display = 'none';
+            inputCol.className = 'col-md-12';
+            backSection.style.display = 'none';
+            poolLabel.innerText = "Final Payout Logic";
+            frontLabel.innerText = "Input the Rate Only (e.g. 0.4)";
+            statusAlert.className = "alert alert-info py-2 border-0 mb-3";
+
+            hiddenFront.value = valF; 
+            hiddenBack.value = 0;
+            
+            let visualKsh = base * valF;
+            totalDisplay.innerText = visualKsh.toLocaleString(undefined, {minimumFractionDigits: 2});
+        }
+    }
+
+    baseInput.addEventListener('input', updateCalculations);
+    visualFront.addEventListener('input', updateCalculations);
+    visualBack.addEventListener('input', updateCalculations);
+    modeSelect.addEventListener('change', updateCalculations);
+    categorySelect.addEventListener('change', updateCalculations);
+    updateCalculations();
+</script>
+{% endblock %}

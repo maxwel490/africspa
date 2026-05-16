@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Africa SPA System - Continental salon management platform for beauty businesses across Africa{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}Africa SPA System, salon management Africa, continental SaaS, multi-tenant platform, beauty salon software{% endblock %}">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{% block canonical_url %}{{ request.base_url }}{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Africa SPA System">
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+    <link rel="robots" type="text/plain" href="/robots.txt">
+    <meta property="og:title" content="{% block og_title %}{{ self.title()|striptags }} - Africa SPA System{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Continental salon management platform with multi-tenant architecture and multi-currency support{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{{ request.base_url }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='images/logo.jpg', _external=True) }}{% endblock %}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}{{ self.title()|striptags }} - Africa SPA System{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Continental salon management platform for African beauty businesses{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='images/logo.jpg', _external=True) }}{% endblock %}">
+    {% include 'favicon.html' %}
+    <title>{% block title %}Africa SPA System{% endblock %}</title>
+    
+    <!-- Bootstrap 5.3.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Select2 for dropdowns -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+    
+    {% block extra_head %}{% endblock %}
+    
+    <style>
+        /* Modern Multi-Tenant Styling */
+        :root {
+            --primary-color: #b8860b;
+            --secondary-color: #6c757d;
+            --accent-color: #8b7355;
+            --success-color: #10b981;
+            --info-color: #06b6d4;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --light-color: #f8f9fa;
+            --dark-color: #1f2937;
+            --gradient-start: #b8860b;
+            --gradient-mid: #8b7355;
+            --gradient-end: #6b8e23;
+        }
+        
+        .navbar-custom { 
+            background: linear-gradient(90deg, #ffffff 0%, #f8f9fa 20%, #e9ecef 40%, rgba(184,134,11,0.3) 70%, rgba(184,134,11,0.6) 90%, rgba(139,115,85,0.8) 100%);
+            border-bottom: 1px solid rgba(184,134,11,0.2);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand { 
+            font-weight: 700; 
+            color: #212529 !important; 
+            letter-spacing: -0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-brand:hover {
+            transform: scale(1.05);
+        }
+        
+        .navbar .nav-link { 
+            color: #212529; 
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.3);
+        }
+        
+        .navbar .nav-link:hover {
+            color: #ffffff;
+            background: rgba(184,134,11,0.4);
+            transform: translateY(-1px);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .navbar .nav-link.active {
+            color: #ffffff;
+            background: rgba(184,134,11,0.6);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        /* User Dropdown Styling */
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ffffff;
+        }
+        
+        .dropdown-menu-portal {
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            padding: 0.5rem;
+            min-width: 250px;
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.95);
+        }
+        
+        .portal-item {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .portal-item:hover {
+            background: linear-gradient(90deg, rgba(184,134,11,0.1) 0%, rgba(139,115,85,0.05) 100%);
+            border-left-color: var(--accent-color);
+            padding-left: 1.25rem;
+            transform: translateX(3px);
+        }
+        
+        .portal-item i {
+            width: 16px;
+            margin-right: 8px;
+            color: var(--secondary-color);
+        }
+        
+        .portal-item:hover i {
+            color: var(--accent-color);
+        }
+        
+        .dropdown-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            color: var(--secondary-color);
+        }
+        
+        .user-role-badge {
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-mid) 100%);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Footer Styling */
+        .site-footer {
+            background: linear-gradient(135deg, var(--dark-color) 0%, #374151 100%);
+            color: #ffffff;
+            border-top: 4px solid transparent;
+            border-image: linear-gradient(90deg, var(--gradient-start) 0%, var(--gradient-end) 100%) 1;
+        }
+        
+        .footer-brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .footer-brand:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+        
+        /* Alert Styling */
+        .alert {
+            border: none;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, rgba(25,135,84,0.1) 0%, rgba(25,135,84,0.2) 100%);
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, rgba(220,53,69,0.1) 0%, rgba(220,53,69,0.2) 100%);
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .btn-superadmin {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            border: none;
+            color: white;
+        }
+        
+        .btn-superadmin:hover {
+            background: linear-gradient(135deg, #c82333 0%, #dc3545 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(220,35,69,0.3);
+        }
+    </style>
+</head>
+<body>
+    {% set is_public_site = request.endpoint and request.endpoint.startswith('main.') %}
+    
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top py-3">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Africa SPA System" class="me-2" style="height: 40px; width: auto;">
+                <span>Africa SPA System</span>
+                <small class="ms-2 opacity-75">Continental Platform</small>
+            </a>
+
+            {% if is_public_site %}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" href="{{ url_for('main.index') }}">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.about' %}active{% endif %}" href="{{ url_for('main.about') }}">
+                            <i class="fas fa-info-circle me-1"></i>About
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.services' %}active{% endif %}" href="{{ url_for('main.services') }}">
+                            <i class="fas fa-concierge-bell me-1"></i>Services
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.gallery' %}active{% endif %}" href="{{ url_for('main.gallery') }}">
+                            <i class="fas fa-images me-1"></i>Gallery
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.contact' %}active{% endif %}" href="{{ url_for('main.contact') }}">
+                            <i class="fas fa-envelope me-1"></i>Contact
+                        </a>
+                    </li>
+                                        <li class="nav-item ms-2">
+                        <a class="btn btn-warning rounded-pill px-4" href="{{ url_for('main.trial') }}">
+                            <i class="fas fa-rocket me-1"></i>Start Free Trial
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+            
+            <div class="ms-auto d-flex align-items-center">
+                {% if current_user.is_authenticated %}
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userProfile" data-bs-toggle="dropdown">
+                            {% if current_user.profile_image %}
+                                <img src="{{ current_user.profile_image }}" alt="{{ current_user.full_name }}" class="user-avatar me-2">
+                            {% else %}
+                                <div class="user-avatar me-2 d-flex align-items-center justify-content-center bg-primary text-white">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            {% endif %}
+                            <div class="ms-2">
+                                <div class="d-flex align-items-center">
+                                    {% if current_user.role == 'superadmin' %}
+                                        <span class="user-role-badge">SUPER ADMIN</span>
+                                    {% elif current_user.role == 'admin' %}
+                                        <span class="user-role-badge">ADMIN</span>
+                                    {% elif current_user.role == 'accountant' %}
+                                        <span class="user-role-badge">ACCOUNTANT</span>
+                                    {% else %}
+                                        <span class="user-role-badge">SALONIST</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-portal mt-2">
+                            <li><h6 class="dropdown-header">
+                                <i class="fas fa-user-circle me-1"></i>
+                                User Profile
+                            </h6></li>
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            {% if current_user.role == 'superadmin' %}
+                                <li><a class="dropdown-item portal-item" href="{{ url_for('superadmin.dashboard') }}">
+                                    <i class="fas fa-shield-alt me-2"></i>
+                                    Super Admin Dashboard
+                                    <small class="text-muted">Manage All Tenants</small>
+                                </a></li>
+                            {% endif %}
+                            
+                            {% if current_user.role == 'admin' %}
+                                <li><a class="dropdown-item portal-item" href="{{ url_for('admin.dashboard') }}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>
+                                    Salon Dashboard
+                                    <small class="text-muted">Manage Your Salon</small>
+                                </a></li>
+                            {% endif %}
+                            
+                            {% if current_user.role == 'accountant' %}
+                                <li><a class="dropdown-item portal-item" href="{{ url_for('accountant.dashboard') }}">
+                                    <i class="fas fa-calculator me-2"></i>
+                                    Salon Accounting
+                                    <small class="text-muted">Financial Management</small>
+                                </a></li>
+                            {% endif %}
+                            
+                            {% if current_user.role == 'salonist' %}
+                                <li><a class="dropdown-item portal-item" href="{{ url_for('salonist.dashboard') }}">
+                                    <i class="fas fa-calendar me-2"></i>
+                                    My Schedule
+                                    <small class="text-muted">Appointments & Services</small>
+                                </a></li>
+                            {% endif %}
+                            
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item portal-item text-danger" href="{{ url_for('auth.logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Logout
+                            </a></li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Staff Portal
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% if current_user.is_authenticated and current_user.role == 'superadmin' and 'required permissions' in message %}
+                        <!-- Skip stale permission messages for superadmin -->
+                    {% else %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show fade-in auto-dismiss" role="alert" data-dismiss-delay="5000">
+                            <i class="fas fa-{% if category == 'error' %}exclamation-triangle{% elif category == 'success' %}check-circle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Modern Footer -->
+    {% if is_public_site %}
+    <footer class="site-footer text-white py-5 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h6 class="footer-title">
+                        <i class="fas fa-globe-africa me-2"></i>
+                        Africa SPA System
+                    </h6>
+                    <p class="small">Continental Salon Management Platform</p>
+                    <p class="small">Empowering beauty businesses across Africa with advanced technology</p>
+                </div>
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h6 class="footer-title">
+                        <i class="fas fa-cogs me-2"></i>
+                        Features
+                    </h6>
+                    <p class="small">Multi-tenant architecture</p>
+                    <p class="small">Role-based access control</p>
+                    <p class="small">Real-time analytics</p>
+                    </div>
+                </div>
+
+                <div class="col-6 col-lg-2">
+                    <p class="footer-eyebrow mb-2">Quick Links</p>
+                    <h6 class="footer-title">Website</h6>
+                    <a class="footer-link" href="{{ url_for('main.index') }}">Home</a>
+                    <a class="footer-link" href="{{ url_for('main.about') }}">About</a>
+                    <a class="footer-link" href="{{ url_for('main.services') }}">Services</a>
+                    <a class="footer-link" href="{{ url_for('main.gallery') }}">Gallery</a>
+                    <a class="footer-link" href="{{ url_for('main.contact') }}">Contact</a>
+                                    </div>
+
+                <div class="col-6 col-lg-3">
+                    <p class="footer-eyebrow mb-2">Platform Features</p>
+                    <h6 class="footer-title">What We Offer</h6>
+                    <div class="text-light-emphasis small">Multi-Tenant Architecture</div>
+                    <div class="text-light-emphasis small">Multi-Currency Support</div>
+                    <div class="text-light-emphasis small">Unlimited Scaling</div>
+                    <div class="text-light-emphasis small">Advanced Analytics</div>
+                    <div class="text-light-emphasis small">24/7 Support</div>
+                </div>
+
+                <div class="col-lg-3">
+                    <p class="footer-eyebrow mb-2">Continental Coverage</p>
+                    <h6 class="footer-title">African Regions</h6>
+                    <p class="mb-1 text-light-emphasis small">East Africa (KES, TZS, UGX)</p>
+                    <p class="mb-1 text-light-emphasis small">West Africa (NGN, GHS, XOF)</p>
+                    <p class="mb-0 text-light-emphasis small">Southern Africa (ZAR, NAD, BWP)</p>
+                </div>
+            </div>
+
+            <hr class="border-secondary my-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center small text-light-emphasis">
+                <span>&copy; 2026 Africa SPA System. All rights reserved.</span>
+                <span>Empowering salons across the continent with advanced technology.</span>
+            </div>
+        </div>
+    </footer>
+    {% endif %}
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof window.jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
+                return;
+            }
+
+            jQuery('.js-select2').each(function () {
+                const placeholder = this.dataset.placeholder || 'Select an option';
+                jQuery(this).select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    placeholder,
+                    allowClear: !this.required
+                });
+            });
+        });
+    </script>
+    {% if not current_user.is_authenticated %}
+    <!-- Advanced Floating Chat Widget -->
+    <div id="chatWidget" class="position-fixed bottom-0 end-0 m-3" style="z-index: 1050;">
+        <button class="btn btn-primary btn-lg rounded-circle shadow position-relative" onclick="openChat()" style="width: 60px; height: 60px;">
+            <i class="bi bi-chat-dots fs-4"></i>
+            <span id="unreadBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
+                0
+            </span>
+        </button>
+    </div>
+
+    <!-- Advanced Chat Modal -->
+    <div class="modal fade" id="chatModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-gradient-primary text-white" style="background: linear-gradient(135deg, #0d6efd, #0a58ca);">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-headset fs-4 me-2"></i>
+                        <div>
+                            <h5 class="modal-title mb-0">Customer Support</h5>
+                            <small id="chatStatus" class="opacity-75">Online - Typically replies in 5 minutes</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <!-- Visitor Form (shown initially) -->
+                    <div id="visitorForm" class="p-4" style="display: none;">
+                        <h6 class="mb-3">Start a conversation</h6>
+                        <form id="startChatForm">
+                            <div class="mb-3">
+                                <label class="form-label">Your Name</label>
+                                <input type="text" id="visitorName" class="form-control" required placeholder="Enter your name">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" id="visitorEmail" class="form-control" required placeholder="your@email.com">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone (optional)</label>
+                                <input type="tel" id="visitorPhone" class="form-control" placeholder="+254...">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">How can we help?</label>
+                                <textarea id="visitorMessage" class="form-control" rows="3" required placeholder="Describe your issue..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-chat-dots me-2"></i>Start Chat
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Chat Messages Area -->
+                    <div id="chatMessagesArea" style="display: none;">
+                        <div id="chatWidgetMessages" class="chat-messages" style="height: 350px; overflow-y: auto; padding: 15px; background-color: #f8f9fa;">
+                            <!-- Messages will be loaded here -->
+                        </div>
+                        <div class="p-3 border-top bg-white">
+                            <form id="chatWidgetForm" class="d-flex gap-2">
+                                <input type="text" id="chatWidgetInput" class="form-control" placeholder="Type your message..." required autocomplete="off">
+                                <button type="submit" class="btn btn-primary" id="sendMessageBtn">
+                                    <i class="bi bi-send"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Welcome Screen -->
+                    <div id="chatWelcome" class="p-4 text-center">
+                        <i class="bi bi-headset fs-1 text-primary mb-3"></i>
+                        <h5>Welcome to Africa SPA Support</h5>
+                        <p class="text-muted">Our team is here to help you with any questions.</p>
+                        <button class="btn btn-primary" onclick="showVisitorForm()">
+                            <i class="bi bi-chat-dots me-2"></i>Start Conversation
+                        </button>
+                        <div class="mt-3 small text-muted">
+                            <i class="bi bi-clock me-1"></i>Business Hours: 8AM - 6PM EAT
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chat Session Management
+        let chatSession = {
+            sessionId: localStorage.getItem('chatSessionId') || null,
+            visitorName: localStorage.getItem('chatVisitorName') || null,
+            visitorEmail: localStorage.getItem('chatVisitorEmail') || null,
+            lastMessageId: 0,
+            isActive: false
+        };
+
+        let pollingInterval = null;
+
+        function openChat() {
+            const chatModal = new bootstrap.Modal(document.getElementById('chatModal'));
+            chatModal.show();
+            
+            // Check if we have an existing session
+            if (chatSession.sessionId && chatSession.visitorName) {
+                showChatArea();
+                loadMessages();
+                startPolling();
+            }
+        }
+
+        function showVisitorForm() {
+            document.getElementById('chatWelcome').style.display = 'none';
+            document.getElementById('visitorForm').style.display = 'block';
+        }
+
+        function showChatArea() {
+            document.getElementById('chatWelcome').style.display = 'none';
+            document.getElementById('visitorForm').style.display = 'none';
+            document.getElementById('chatMessagesArea').style.display = 'block';
+        }
+
+        // Start Chat Form Submission
+        document.getElementById('startChatForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('visitorName').value.trim();
+            const email = document.getElementById('visitorEmail').value.trim();
+            const phone = document.getElementById('visitorPhone').value.trim();
+            const message = document.getElementById('visitorMessage').value.trim();
+            
+            // Generate session ID
+            chatSession.sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            chatSession.visitorName = name;
+            chatSession.visitorEmail = email;
+            
+            // Save to localStorage
+            localStorage.setItem('chatSessionId', chatSession.sessionId);
+            localStorage.setItem('chatVisitorName', name);
+            localStorage.setItem('chatVisitorEmail', email);
+            
+            // Show chat area
+            showChatArea();
+            
+            // Add welcome message
+            addMessageToChat({
+                content: `Hello ${name}! Thank you for contacting Africa SPA System support. How can I help you today?`,
+                sender_name: 'Support Agent',
+                sender_role: 'superadmin',
+                created_at: new Date().toISOString()
+            }, false);
+            
+            // Send initial message
+            sendMessageToServer(message, name, email, phone);
+            
+            // Start polling for responses
+            startPolling();
+        });
+
+        // Chat Form Submission
+        document.getElementById('chatWidgetForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatWidgetInput');
+            const message = input.value.trim();
+            
+            if (message && chatSession.sessionId) {
+                // Add to UI immediately
+                addMessageToChat({
+                    content: message,
+                    sender_name: chatSession.visitorName,
+                    sender_role: 'outsider',
+                    created_at: new Date().toISOString()
+                }, true);
+                
+                // Send to server
+                sendMessageToServer(message, chatSession.visitorName, chatSession.visitorEmail, '');
+                
+                input.value = '';
+            }
+        });
+
+        function sendMessageToServer(content, name, email, phone) {
+            fetch('/public-chat/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    message: content,
+                    session_id: chatSession.sessionId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.error('Failed to send message:', data.error);
+                    addSystemMessage('Failed to send message. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+                addSystemMessage('Network error. Please check your connection.');
+            });
+        }
+
+        function addMessageToChat(message, isSent) {
+            const messagesDiv = document.getElementById('chatWidgetMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'mb-3 ' + (isSent ? 'text-end' : 'text-start');
+            
+            const time = new Date(message.created_at).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+            
+            messageDiv.innerHTML = `
+                <div class="d-inline-block ${isSent ? 'bg-primary text-white' : 'bg-white border'} p-3 rounded-3" style="max-width: 80%;">
+                    <div class="small fw-bold mb-1">
+                        ${message.sender_name}
+                        <span class="opacity-75 ms-2">${time}</span>
+                    </div>
+                    <div>${message.content}</div>
+                </div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addSystemMessage(text) {
+            const messagesDiv = document.getElementById('chatWidgetMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'text-center my-2';
+            messageDiv.innerHTML = `<small class="text-muted">${text}</small>`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function startPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+            
+            // Poll for new messages every 3 seconds
+            pollingInterval = setInterval(() => {
+                if (chatSession.sessionId) {
+                    checkForNewMessages();
+                }
+            }, 3000);
+        }
+
+        function checkForNewMessages() {
+            fetch(`/public-chat/check/${chatSession.sessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.messages.length > 0) {
+                        data.messages.forEach(msg => {
+                            addMessageToChat(msg, false);
+                        });
+                        updateUnreadBadge(data.messages.length);
+                    }
+                })
+                .catch(error => console.error('Error checking messages:', error));
+        }
+
+        function updateUnreadBadge(count) {
+            const badge = document.getElementById('unreadBadge');
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function loadMessages() {
+            // Load existing messages from server
+            checkForNewMessages();
+        }
+
+        // Stop polling when modal is closed
+        document.getElementById('chatModal')?.addEventListener('hidden.bs.modal', function() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+            updateUnreadBadge(0);
+        });
+
+        // Check for existing session on page load
+        if (chatSession.sessionId && chatSession.visitorName) {
+            // We have an existing session, start polling in background
+            startPolling();
+        }
+        
+        // Auto-dismiss flash messages
+        document.addEventListener('DOMContentLoaded', function() {
+            const autoDismissAlerts = document.querySelectorAll('.auto-dismiss');
+            autoDismissAlerts.forEach(function(alert) {
+                const delay = parseInt(alert.getAttribute('data-dismiss-delay')) || 5000;
+                setTimeout(function() {
+                    if (alert.parentNode) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                }, delay);
+            });
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

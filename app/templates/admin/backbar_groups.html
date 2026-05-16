@@ -1,0 +1,159 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Backbar Groups - {{ current_user.branch }}{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 fw-bold text-dark mb-1">
+                        <i class="bi bi-people-fill me-2 text-primary"></i>Backbar Groups
+                    </h1>
+                    <p class="text-muted mb-0">Manage deduction groups for different staff categories</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.add_backbar_group') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Add New Group
+                    </a>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    {% if groups %}
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="border-0 small fw-bold ps-4">Group Name</th>
+                                    <th class="border-0 small fw-bold">Description</th>
+                                    <th class="border-0 small fw-bold">Target Criteria</th>
+                                    <th class="border-0 small fw-bold">Appearance</th>
+                                    <th class="border-0 small fw-bold text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for group in groups %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-circle bg-{{ group.color }} bg-opacity-10 p-2 me-3">
+                                                <i class="{{ group.icon }} text-{{ group.color }}"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ group.name }}</div>
+                                                <small class="text-muted">Created {{ group.created_at.strftime('%Y-%m-%d') }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">{{ group.description or '-' }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            {% set specialties = group.get_target_specialties() %}
+                                            {% set employment_types = group.get_target_employment_types() %}
+                                            
+                                            {% if specialties %}
+                                            <div class="mb-1">
+                                                <strong>Specialties:</strong> 
+                                                <span class="badge bg-light text-dark me-1">{{ specialties|join(', ') }}</span>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if employment_types %}
+                                            <div>
+                                                <strong>Employment:</strong> 
+                                                <span class="badge bg-secondary">{{ employment_types|join(', ') }}</span>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if not specialties and not employment_types %}
+                                            <span class="text-muted">All salonists</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded bg-{{ group.color }} bg-opacity-10 p-1 me-2">
+                                                <i class="{{ group.icon }} text-{{ group.color }} small"></i>
+                                            </div>
+                                            <span class="small text-{{ group.color }}">{{ group.color }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('admin.edit_backbar_group', group_id=group.id) }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('admin.delete_backbar_group', group_id=group.id) }}" 
+                                                  class="d-inline" onsubmit="return confirm('Are you sure you want to delete this group?')">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5 class="text-muted mb-3">No Backbar Groups Yet</h5>
+                        <p class="text-muted mb-4">Create groups to organize your staff deductions by categories like specialties or employment types.</p>
+                        <a href="{{ url_for('admin.add_backbar_group') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Create Your First Group
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Available Options Reference -->
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="bi bi-info-circle me-2"></i>Available Options for Your Salon
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-primary mb-3">Available Specialties</h6>
+                            {% if specialties %}
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for specialty in specialties %}
+                                <span class="badge bg-light text-dark border">{{ specialty }}</span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted small">No specialties found for your staff.</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-success mb-3">Available Employment Types</h6>
+                            {% if employment_types %}
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for emp_type in employment_types %}
+                                <span class="badge bg-secondary">{{ emp_type }}</span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted small">No employment types found for your staff.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

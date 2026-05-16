@@ -1,0 +1,155 @@
+{% extends "superadmin/superadmin_base.html" %}
+
+{% block title %}Settings - Super Admin{% endblock %}
+
+{% set page_title = '⚙️ System Settings' %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-muted mb-0">Configure platform-wide settings and preferences</p>
+        </div>
+    </div>
+
+    <!-- Settings Cards -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shield-lock me-2"></i>Security Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Security settings are managed through environment variables.
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Max Login Attempts</span>
+                            <span class="badge bg-secondary">5</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Account Lockout Duration</span>
+                            <span class="badge bg-secondary">30 min</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Password Expiry</span>
+                            <span class="badge bg-secondary">90 days</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-globe me-2"></i>Regional Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Regional pricing multipliers are configured in the Pricing section.
+                    </div>
+                    <a href="{{ url_for('superadmin_pricing.pricing_management') }}" class="btn btn-outline-success w-100">
+                        <i class="bi bi-currency-dollar me-2"></i>Go to Pricing
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-credit-card me-2"></i>Payment Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Configure payment gateway API keys (Google Pay, Stripe, PayPal, Flutterwave, M-Pesa).
+                    </div>
+                    <a href="{{ url_for('superadmin.payment_settings') }}" class="btn btn-outline-dark w-100">
+                        <i class="bi bi-gear me-2"></i>Configure Payments
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-envelope me-2"></i>Contact Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Configure company contact details, emails, phone numbers, address, and social media links.
+                    </div>
+                    <a href="{{ url_for('superadmin.contact_settings') }}" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-gear me-2"></i>Configure Contacts
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-info text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-envelope me-2"></i>System Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <strong>Platform:</strong> Africa SPA System
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Architecture:</strong> Multi-Tenant SaaS
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Coverage:</strong> Continental (Africa)
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Role:</strong> Platform Owner (Super Admin)
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-tools me-2"></i>System Maintenance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Advanced maintenance options are available via backend scripts.
+                    </div>
+                    <ul class="list-unstyled text-muted small mb-0">
+                        <li><i class="bi bi-check-circle me-2 text-success"></i>Database backups automated</li>
+                        <li><i class="bi bi-check-circle me-2 text-success"></i>Security monitoring active</li>
+                        <li><i class="bi bi-check-circle me-2 text-success"></i>Health checks scheduled</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

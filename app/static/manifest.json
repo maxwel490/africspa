@@ -1,0 +1,47 @@
+{
+  "favicon/favicon-16x16.png": {
+    "path": "favicon/favicon-16x16.png",
+    "hash": "2b7fc03d",
+    "size": 548
+  },
+  "favicon/android-chrome-512x512.png": {
+    "path": "favicon/android-chrome-512x512.png",
+    "hash": "d7278152",
+    "size": 98450
+  },
+  "favicon/favicon-32x32.png": {
+    "path": "favicon/favicon-32x32.png",
+    "hash": "3d12aabb",
+    "size": 1373
+  },
+  "favicon/source.png": {
+    "path": "favicon/source.png",
+    "hash": "795413c9",
+    "size": 1461052
+  },
+  "favicon/apple-touch-icon.png": {
+    "path": "favicon/apple-touch-icon.png",
+    "hash": "27ebb1d9",
+    "size": 18077
+  },
+  "favicon/android-chrome-192x192.png": {
+    "path": "favicon/android-chrome-192x192.png",
+    "hash": "4e118f2c",
+    "size": 19997
+  },
+  "favicon/favicon.svg": {
+    "path": "favicon/favicon.svg",
+    "hash": "74eaf8c1",
+    "size": 1846
+  },
+  "images/logo.jpg": {
+    "path": "images/logo.jpg",
+    "hash": "a2b179f4",
+    "size": 934596
+  },
+  "images/media/kadri_logo.png": {
+    "path": "images/media/kadri_logo.png",
+    "hash": "c4ea4567",
+    "size": 3633
+  }
+}

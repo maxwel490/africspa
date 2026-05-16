@@ -1,0 +1,337 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-dark text-white p-3">
+                    <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2"></i>Register New Staff Member</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ url_for('admin.create_worker') }}" method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small text-uppercase">Full Names (First & Last)</label>
+                                    <input type="text" name="full_name" class="form-control border-primary" placeholder="e.g. Jane Doe" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small text-uppercase">National ID Number</label>
+                                    <input type="text" name="id_number" class="form-control" placeholder="ID Number" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small text-uppercase">Assigned Branch</label>
+                                    <select name="branch" class="form-select border-primary" required>
+                                        <option value="" disabled selected>Select Location</option>
+                                        {% for b in managed_branches %}
+                                            <option value="{{ b }}">{{ b }} Branch</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small text-uppercase">Phone Number</label>
+                                    <input type="tel" name="phone" class="form-control" placeholder="07XXXXXXXX" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small text-uppercase">Email Address</label>
+                                    <input type="email" name="email" class="form-control" placeholder="name@example.com" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small text-uppercase text-primary">Staff Role</label>
+                                    <select name="role" id="roleSelect" class="form-select border-primary" onchange="toggleAccountantFields(); toggleSpecialtyField()">
+                                        <option value="manager">Manager</option>
+                                        <option value="accountant">Accountant (System User)</option>
+                                        <option value="cleaner">Cleaner / Support</option>
+                                        <option value="salonist">Salonist</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3" id="specialtyField" style="display: none;">
+                                    <label class="form-label fw-bold small text-uppercase">Primary Specialty</label>
+                                    <input type="text" name="specialty" class="form-control" list="specialtyList" placeholder="Type or select a specialty...">
+                                    <datalist id="specialtyList">
+                                        <option value="Conrows">
+                                        <option value="Braids">
+                                        <option value="Undo">
+                                        <option value="Nails">
+                                        <option value="Wash">
+                                        <option value="Makeup">
+                                        <option value="Massage">
+                                        <option value="Eyelash Extensions">
+                                        <option value="Hair Coloring">
+                                        <option value="Waxing">
+                                        <option value="Facials">
+                                    </datalist>
+                                    <div class="form-text text-muted small">Select from dropdown or type a new specialty</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="accountantFields" class="mt-3 p-3 bg-light rounded border border-primary" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small fw-bold">System Username</label>
+                                    <input type="text" name="username" id="usernameInput" class="form-control" placeholder="Login ID" required>
+                                    <div id="usernameSuggestions" class="mt-2" style="display: none;"></div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-uppercase">Set Password</label>
+                                    <input type="password" name="password" id="passwordInput" class="form-control" placeholder="Secure Password" required>
+                                    <div class="mt-2" id="passwordRequirements">
+                                        <h6 class="text-muted small mb-2">Password Requirements:</h6>
+                                        <div class="row g-2">
+                                            <div class="col-12">
+                                                <small class="requirement" id="req-length">
+                                                    <i class="fas fa-times-circle text-danger me-1"></i>
+                                                    At least <span>8</span> characters
+                                                </small>
+                                            </div>
+                                            <div class="col-12">
+                                                <small class="requirement" id="req-uppercase">
+                                                    <i class="fas fa-times-circle text-danger me-1"></i>
+                                                    At least <span>1</span> uppercase letter
+                                                </small>
+                                            </div>
+                                            <div class="col-12">
+                                                <small class="requirement" id="req-lowercase">
+                                                    <i class="fas fa-times-circle text-danger me-1"></i>
+                                                    At least <span>1</span> lowercase letter
+                                                </small>
+                                            </div>
+                                            <div class="col-12">
+                                                <small class="requirement" id="req-digits">
+                                                    <i class="fas fa-times-circle text-danger me-1"></i>
+                                                    At least <span>1</span> digit
+                                                </small>
+                                            </div>
+                                            <div class="col-12">
+                                                <small class="requirement" id="req-special">
+                                                    <i class="fas fa-times-circle text-danger me-1"></i>
+                                                    At least <span>1</span> special character
+                                                </small>
+                                            </div>
+                                            <div class="col-12">
+                                                <small class="requirement">
+                                                    <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                                    Cannot contain your username as a major component (>50%)
+                                                </small>
+                                            </div>
+                                            <div class="col-12">
+                                                <small class="requirement">
+                                                    <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                                    Cannot be too common or easily guessable
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 mt-3">
+                            <label class="form-label fw-bold small text-uppercase text-primary">Monthly Base Salary</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">KSh</span>
+                                <input type="number" name="base_salary" class="form-control border-primary" placeholder="0.00" step="0.01" required>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-dark btn-lg shadow-sm">
+                                <i class="bi bi-shield-lock me-2"></i>Create Staff Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleAccountantFields() {
+    const role = document.getElementById('roleSelect').value;
+    const accountantSection = document.getElementById('accountantFields');
+    const usernameInput = document.getElementById('usernameInput');
+    const passwordInput = document.getElementById('passwordInput');
+    
+    if (role === 'accountant') {
+        accountantSection.style.display = 'block';
+        usernameInput.setAttribute('required', 'required');
+        passwordInput.setAttribute('required', 'required');
+    } else {
+        accountantSection.style.display = 'none';
+        usernameInput.removeAttribute('required');
+        passwordInput.removeAttribute('required');
+        // Clear values if switching away from accountant
+        usernameInput.value = '';
+        passwordInput.value = '';
+    }
+}
+
+function toggleSpecialtyField() {
+    const role = document.getElementById('roleSelect').value;
+    const specialtyField = document.getElementById('specialtyField');
+    const specialtyInput = specialtyField.querySelector('input[name="specialty"]');
+    
+    if (role === 'salonist') {
+        specialtyField.style.display = 'block';
+        specialtyInput.setAttribute('required', 'required');
+    } else {
+        specialtyField.style.display = 'none';
+        specialtyInput.removeAttribute('required');
+        specialtyInput.value = '';
+    }
+}
+
+// Auto-format phone number for multiple African countries
+document.querySelector('input[name="phone"]').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    
+    // Only auto-format if user hasn't already included country code
+    if (value.length > 0 && !e.target.value.startsWith('+')) {
+        // Kenya: 07... -> +2547...
+        if (value.startsWith('07')) {
+            e.target.value = '+254' + value.substring(1);
+        }
+        // Nigeria: 08/09... -> +2348/9...
+        else if (value.startsWith('08') || value.startsWith('09')) {
+            e.target.value = '+234' + value.substring(1);
+        }
+        // South Africa: 0... -> +27...
+        else if (value.startsWith('0') && value.length >= 9) {
+            e.target.value = '+27' + value.substring(1);
+        }
+        // Ghana: 02... -> +2332...
+        else if (value.startsWith('02')) {
+            e.target.value = '+233' + value.substring(1);
+        }
+        // Uganda: 03/07... -> +2563/7...
+        else if (value.startsWith('03') || value.startsWith('07')) {
+            e.target.value = '+256' + value.substring(1);
+        }
+        // Tanzania: 06/07... -> +2556/7...
+        else if (value.startsWith('06') || value.startsWith('07')) {
+            e.target.value = '+255' + value.substring(1);
+        }
+    }
+});
+
+// Real-time username validation with Google-style suggestions for admin
+document.getElementById('usernameInput').addEventListener('input', function() {
+    const username = this.value.trim();
+    const usernameField = this;
+    const suggestionsContainer = document.getElementById('usernameSuggestions');
+    
+    // Clear previous validation state
+    usernameField.classList.remove('is-invalid', 'is-valid');
+    suggestionsContainer.style.display = 'none';
+    suggestionsContainer.innerHTML = '';
+    
+    if (username.length >= 3) {
+        // Check username availability via AJAX
+        fetch(`/admin/check-username?username=${encodeURIComponent(username)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.available) {
+                    usernameField.classList.add('is-valid');
+                    usernameField.classList.remove('is-invalid');
+                } else {
+                    usernameField.classList.add('is-invalid');
+                    usernameField.classList.remove('is-valid');
+                    
+                    // Show Google-style suggestions if available
+                    if (data.suggestions && data.suggestions.length > 0) {
+                        suggestionsContainer.style.display = 'block';
+                        suggestionsContainer.innerHTML = `
+                            <div class="text-muted small mb-1">This username is taken. You can use:</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                ${data.suggestions.slice(0, 3).map(suggestion => `
+                                    <button type="button" class="btn btn-sm btn-outline-success username-suggestion" 
+                                            style="color: #198754; border-color: #198754; font-weight: 500;"
+                                            onclick="selectUsernameAdmin('${suggestion}')">
+                                        ${suggestion}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                
+            });
+    }
+});
+
+// Function to select a suggested username for admin
+function selectUsernameAdmin(username) {
+    const usernameField = document.getElementById('usernameInput');
+    const suggestionsContainer = document.getElementById('usernameSuggestions');
+    
+    usernameField.value = username;
+    usernameField.classList.add('is-valid');
+    usernameField.classList.remove('is-invalid');
+    suggestionsContainer.style.display = 'none';
+    suggestionsContainer.innerHTML = '';
+}
+
+// Password requirements checker
+document.getElementById('passwordInput').addEventListener('input', function() {
+    const password = this.value;
+     // Debug log
+    updatePasswordRequirements(password);
+});
+
+function updatePasswordRequirements(password) {
+    const requirements = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        digits: /\d/.test(password),
+        special: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)
+    };
+    
+    // Update each requirement indicator
+    updateRequirementIndicator('req-length', requirements.length);
+    updateRequirementIndicator('req-uppercase', requirements.uppercase);
+    updateRequirementIndicator('req-lowercase', requirements.lowercase);
+    updateRequirementIndicator('req-digits', requirements.digits);
+    updateRequirementIndicator('req-special', requirements.special);
+}
+
+function updateRequirementIndicator(elementId, isMet) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const icon = element.querySelector('i');
+    const textElement = element.querySelector('span');
+    
+    if (isMet) {
+        // Turn green when requirement is met
+        icon.className = 'fas fa-check-circle text-success me-1';
+        element.classList.add('text-success');
+        element.classList.remove('text-muted');
+        if (textElement) {
+            textElement.classList.add('text-success');
+        }
+    } else {
+        // Red when not met
+        icon.className = 'fas fa-times-circle text-danger me-1';
+        element.classList.add('text-muted');
+        element.classList.remove('text-success');
+        if (textElement) {
+            textElement.classList.remove('text-success');
+        }
+    }
+}
+</script>
+{% endblock %}

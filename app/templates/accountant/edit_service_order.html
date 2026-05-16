@@ -1,0 +1,200 @@
+{% extends "accountant/accountant_base.html" %}
+
+{% block title %}Edit Service Order #{{ order.id }} - {{ current_user.branch or 'Unassigned' }}{% endblock %}
+
+{% block accountant_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-pencil me-2"></i>Edit Service Order #{{ order.id }}</h2>
+    <a href="{{ url_for('accountant.service_orders') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Back to Orders
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Payment Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Client Information</label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" value="{{ order.client_name }}" readonly>
+                                <div class="form-text">Name</div>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="tel" class="form-control" value="{{ order.client_phone }}" readonly>
+                                <div class="form-text">Phone</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="receipt_no" class="form-label">Transaction/Receipt Number *</label>
+                        <input type="text" class="form-control" id="receipt_no" name="receipt_no" 
+                               value="{{ order.receipt_no or '' }}" required
+                               placeholder="e.g. RCPT-1234 or SO-1234">
+                        <div class="form-text">Enter the receipt or transaction number for this payment</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="transacted_total" class="form-label">Transacted Total *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">KES</span>
+                            <input type="number" class="form-control" id="transacted_total" name="transacted_total" 
+                                   step="0.01" min="0" value="{{ order.transacted_total or '' }}" required
+                                   placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">Payment Method *</label>
+                        <select class="form-select" id="payment_method" name="payment_method" required>
+                            <option value="">Select payment method</option>
+                            {% for method in payment_options %}
+                            <option value="{{ method.code }}" {{ 'selected' if order.payment_method == method.code }}>
+                                <i class="{{ method.icon }}"></i> {{ method.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">
+                            Payment options are configured for your salon.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_model" name="is_model" 
+                                   {{ 'checked' if order.is_model }}>
+                            <label class="form-check-label" for="is_model">
+                                This is a model (no payment required)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Note:</strong> After saving payment details, the status will automatically change to "Paid" 
+                        and you'll be able to record the services provided.
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('accountant.service_orders') }}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Save Payment Details
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Order Details</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Order ID:</strong></td>
+                        <td>#{{ order.id }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                            <span class="badge bg-warning">Pending</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Created:</strong></td>
+                        <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Branch:</strong></td>
+                        <td>{{ order.branch }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-question-circle me-2"></i>Payment Methods</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>M-Pesa:</strong> Mobile money transfer
+                </div>
+                <div class="mb-2">
+                    <strong>Bank:</strong> Direct bank deposit/transfer
+                </div>
+                <div class="mb-2">
+                    <strong>Model:</strong> No payment required (photoshoot, training, etc.)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Handle payment method changes
+    $('#payment_method').on('change', function() {
+        const selectedMethod = $(this).val();
+        
+        // Check if selected method is a no-payment method (contains 'model' or 'internal')
+        if (selectedMethod && (selectedMethod.includes('model') || selectedMethod.includes('internal'))) {
+            $('#is_model').prop('checked', true);
+            $('#transacted_total').val('0.00').prop('readonly', true);
+        } else {
+            $('#is_model').prop('checked', false);
+            $('#transacted_total').prop('readonly', false);
+        }
+    });
+
+    // Handle model checkbox changes
+    $('#is_model').on('change', function() {
+        if ($(this).is(':checked')) {
+            // Find and select the first no-payment method
+            const noPaymentMethod = $('#payment_method option').filter(function() {
+                return $(this).val() && ($(this).val().includes('model') || $(this).val().includes('internal'));
+            }).first();
+            
+            if (noPaymentMethod.length > 0) {
+                $('#payment_method').val(noPaymentMethod.val());
+            }
+            $('#transacted_total').val('0.00').prop('readonly', true);
+        } else {
+            // Clear model selection and enable amount input
+            const currentVal = $('#payment_method').val();
+            if (currentVal && (currentVal.includes('model') || currentVal.includes('internal'))) {
+                $('#payment_method').val('');
+            }
+            $('#transacted_total').prop('readonly', false);
+        }
+    });
+    
+    // Initialize form state on page load
+    $('#payment_method').trigger('change');
+});
+</script>
+{% endblock %}
