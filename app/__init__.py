@@ -65,19 +65,12 @@ def create_app(template_folder='templates', static_folder='static'):
     app.register_blueprint(public_chat_bp, url_prefix='/public-chat')
 
     # ----------------------------------------------------------------
-    # Domain-driven models are loaded via app.models compatibility layer
-    # which re-exports from app.domains.*/models/
+    # Domain models are registered via app.models compatibility layer
+    # which re-exports from app.domains.*/models/.
+    # The import on line 86 (from app.models import Worker) triggers
+    # loading of all domain models into SQLAlchemy's registry.
     # ----------------------------------------------------------------
-    # Import domain models to ensure they are registered with SQLAlchemy
-    import app.domains.tenancy.models
-    import app.domains.authentication.models
-    import app.domains.crm.models
-    import app.domains.scheduling.models
-    import app.domains.inventory.models
-    import app.domains.finance.models
-    import app.domains.billing.models
-    import app.domains.analytics.models
-    
+
     # Initialize OAuth providers after app is fully configured
     from app.auth.oauth_providers import oauth_manager
     with app.app_context():
