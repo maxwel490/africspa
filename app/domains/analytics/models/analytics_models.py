@@ -1,7 +1,9 @@
-"""Analytics domain models - SystemConfig"""
+"""Analytics domain models - SystemConfig."""
 from datetime import datetime, timezone
 from app import db
 
+
+# Helper for UTC time to ensure Python 3.12 compatibility
 def get_utc_now():
     return datetime.now(timezone.utc)
 
@@ -15,19 +17,23 @@ class SystemConfig(db.Model):
     value = db.Column(db.Text)
     description = db.Column(db.Text)
     
-    config_type = db.Column(db.String(50))
-    is_public = db.Column(db.Boolean, default=False)
-    is_editable = db.Column(db.Boolean, default=True)
+    # Configuration metadata
+    config_type = db.Column(db.String(50))  # string, number, boolean, json
+    is_public = db.Column(db.Boolean, default=False)  # Whether config is exposed to API
+    is_editable = db.Column(db.Boolean, default=True)  # Whether config can be edited by salon admins
     
+    # Validation
     min_value = db.Column(db.Float)
     max_value = db.Column(db.Float)
-    allowed_values = db.Column(db.Text)
+    allowed_values = db.Column(db.Text)  # JSON string of allowed values
     
+    # Audit fields
     created_at = db.Column(db.DateTime, default=get_utc_now)
     updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
     updated_by_id = db.Column(db.Integer, db.ForeignKey('workers.id'))
     
     def get_parsed_value(self):
+        """Parse configuration value based on type"""
         if self.config_type == 'json':
             import json
             return json.loads(self.value)
@@ -39,6 +45,7 @@ class SystemConfig(db.Model):
             return self.value
     
     def validate_value(self, new_value):
+        """Validate new value against constraints"""
         if self.config_type == 'number':
             try:
                 num_value = float(new_value)
