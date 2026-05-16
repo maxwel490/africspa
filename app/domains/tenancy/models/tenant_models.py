@@ -1,7 +1,9 @@
-"""Tenancy domain models - Salon and Branch"""
-from datetime import datetime, timezone
+"""Tenancy domain models - Salon and Branch."""
+from datetime import datetime, timezone, timedelta
 from app import db
 
+
+# Helper for UTC time to ensure Python 3.12 compatibility
 def get_utc_now():
     return datetime.now(timezone.utc)
 
@@ -21,7 +23,7 @@ class Salon(db.Model):
     subscription_expires = db.Column(db.DateTime)
     max_branches = db.Column(db.Integer, default=3)
     max_staff = db.Column(db.Integer, default=10)
-    max_clients = db.Column(db.Integer, default=500)
+    max_clients = db.Column(db.Integer, default=500)  # Added for client limits
     created_at = db.Column(db.DateTime, default=get_utc_now)
     updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
     
@@ -29,7 +31,7 @@ class Salon(db.Model):
     billing_email = db.Column(db.String(100))
     billing_phone = db.Column(db.String(20))
     billing_address = db.Column(db.Text)
-    payment_method = db.Column(db.String(50))
+    payment_method = db.Column(db.String(50))  # mpesa, card, bank
     last_payment_date = db.Column(db.DateTime)
     next_billing_date = db.Column(db.DateTime)
     
@@ -50,12 +52,12 @@ class Salon(db.Model):
     feature_multi_branch = db.Column(db.Boolean, default=True)
     
     # Business model fields
-    has_internal_shop = db.Column(db.Boolean, default=False)
-    shop_commission_rate = db.Column(db.Float, default=0.0)
+    has_internal_shop = db.Column(db.Boolean, default=False)  # Whether salon runs internal product shop
+    shop_commission_rate = db.Column(db.Float, default=0.0)  # Commission rate for internal shop sales
     
     # Payment configuration
-    payment_config = db.Column(db.Text)
-    has_backbar = db.Column(db.Boolean, default=True)
+    payment_config = db.Column(db.Text)  # JSON configuration for payment methods
+    has_backbar = db.Column(db.Boolean, default=True)  # Whether salon uses backbar deductions
     
     # Relationships
     branches = db.relationship('Branch', backref='salon', lazy=True, cascade='all, delete-orphan')
@@ -72,13 +74,17 @@ class Salon(db.Model):
     
     def get_subscription_price(self):
         """Get monthly price using dynamic pricing configuration"""
+        # Count active branches
         branch_count = len([b for b in self.branches if b.is_active]) if self.branches else 1
         
+        # Get dynamic pricing from database
         try:
-            from app.domains.billing.models.billing_models import PricingConfig
             pricing_config = PricingConfig.get_active_config()
             if pricing_config:
+                # Check if this salon qualifies for enterprise pricing
                 is_enterprise = branch_count >= pricing_config.enterprise_min_branches
+                
+                # Get region from country or default to East Africa
                 region = getattr(self, 'region', 'east_africa') or 'east_africa'
                 
                 if is_enterprise:
@@ -88,7 +94,8 @@ class Salon(db.Model):
         except:
             pass
         
-        return branch_count * 30 * 120
+        # Fallback to $30 USD per branch in KES
+        return branch_count * 30 * 120  # $30 * 120 KES/USD
     
     def get_regional_pricing_info(self):
         """Get complete regional pricing information"""
@@ -96,7 +103,6 @@ class Salon(db.Model):
         branch_count = len([b for b in self.branches if b.is_active]) if self.branches else 1
         
         try:
-            from app.continental_scaling import ContinentalSubscriptionManager
             region_config = ContinentalSubscriptionManager.AFRICAN_REGIONS.get(region)
             if region_config:
                 price_per_branch_usd = 30
@@ -116,17 +122,19 @@ class Salon(db.Model):
             return {
                 'salon_name': self.name,
                 'error': str(e),
-                'fallback_price': branch_count * 30
+                'fallback_price': branch_count * 30  # $30 per branch fallback
             }
     
     def get_monthly_cost_breakdown(self):
         """Get detailed monthly cost breakdown"""
-        from app.continental_scaling import ContinentalSubscriptionManager
+        from .continental_scaling import ContinentalSubscriptionManager
+        
         return ContinentalSubscriptionManager.calculate_salon_monthly_cost(self)
     
     def upgrade_to_continental_plan(self, plan):
         """Upgrade to continental subscription plan"""
-        from app.continental_scaling import ContinentalSubscriptionManager
+        from .continental_scaling import ContinentalSubscriptionManager
+        
         return ContinentalSubscriptionManager.upgrade_salon_limits(self, plan)
     
     def is_subscription_active(self):
@@ -148,33 +156,40 @@ class Salon(db.Model):
             'clients_limit': self.max_clients
         }
 
-
 class Branch(db.Model):
     """Salon branches with multi-tenant support"""
     __tablename__ = 'branches'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, index=True)
-    code = db.Column(db.String(10), unique=True, nullable=False)
+    code = db.Column(db.String(10), unique=True, nullable=False)  # Branch code for internal use
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, default=get_utc_now)
     updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
     
-    salon_id = db.Column(db.Integer, db.ForeignKey('salons.id'), nullable=True)
+    # Multi-tenant relationship
+    salon_id = db.Column(db.Integer, db.ForeignKey('salons.id'), nullable=True)  # Nullable for superadmin
     
+    # Location and contact
     address = db.Column(db.Text)
     phone = db.Column(db.String(20))
     email = db.Column(db.String(100))
     manager_id = db.Column(db.Integer, db.ForeignKey('workers.id'))
     
-    opening_time = db.Column(db.String(20))
-    closing_time = db.Column(db.String(20))
-    days_open = db.Column(db.String(20))
+    # Operating hours
+    opening_time = db.Column(db.String(20))  # HH:MM format
+    closing_time = db.Column(db.String(20))  # HH:MM format
+    days_open = db.Column(db.String(20))  # Comma-separated days
     
+    # Configuration
     timezone = db.Column(db.String(50))
     currency = db.Column(db.String(10), default='KES')
     
+    # Relationships
     manager = db.relationship('Worker', foreign_keys=[manager_id], backref='managed_branches')
+    
+    # Note: Use direct queries for relationships due to SQLAlchemy compatibility
+    # Example: Worker.query.filter_by(branch=branch_name, salon_id=salon_id)
     
     def __repr__(self):
         return f'<Branch {self.name}>'
