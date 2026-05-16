@@ -129,13 +129,13 @@ class Salon(db.Model):
     
     def get_monthly_cost_breakdown(self):
         """Get detailed monthly cost breakdown"""
-        from .continental_scaling import ContinentalSubscriptionManager
+        from app.continental_scaling import ContinentalSubscriptionManager
         
         return ContinentalSubscriptionManager.calculate_salon_monthly_cost(self)
     
     def upgrade_to_continental_plan(self, plan):
         """Upgrade to continental subscription plan"""
-        from .continental_scaling import ContinentalSubscriptionManager
+        from app.continental_scaling import ContinentalSubscriptionManager
         
         return ContinentalSubscriptionManager.upgrade_salon_limits(self, plan)
     
