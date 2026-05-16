@@ -37,7 +37,10 @@ def create_app(template_folder='templates', static_folder='static'):
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     
+    # ----------------------------------------------------------------
     # Blueprint Registrations
+    # ----------------------------------------------------------------
+    # Role-based blueprints (legacy - being migrated to domain-based)
     from app.auth.routes import auth_bp
     from app.auth.oauth_routes import oauth_bp
     from app.admin import admin_bp
@@ -49,7 +52,7 @@ def create_app(template_folder='templates', static_folder='static'):
     from app.controllers.subscription_payment import subscription_payment_bp
     from app.routes.public_chat import public_chat_bp
     
-    # Register blueprints
+    # Register role-based blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(oauth_bp, url_prefix='/oauth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
@@ -60,7 +63,14 @@ def create_app(template_folder='templates', static_folder='static'):
     app.register_blueprint(superadmin_pricing_bp, url_prefix='/superadmin/pricing')
     app.register_blueprint(subscription_payment_bp)
     app.register_blueprint(public_chat_bp, url_prefix='/public-chat')
-    
+
+    # ----------------------------------------------------------------
+    # Domain models are registered via app.models compatibility layer
+    # which re-exports from app.domains.*/models/.
+    # The import on line 86 (from app.models import Worker) triggers
+    # loading of all domain models into SQLAlchemy's registry.
+    # ----------------------------------------------------------------
+
     # Initialize OAuth providers after app is fully configured
     from app.auth.oauth_providers import oauth_manager
     with app.app_context():
